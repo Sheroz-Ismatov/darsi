@@ -1,0 +1,78 @@
+/* Darsi design tokens — DESIGN_SYSTEM.md §1–3. Light by default, dark via [data-theme='dark']. */
+:root {
+  color-scheme: light;
+
+  --bg: #f4f1ea;
+  --surface: #ffffff;
+  --surface-2: #faf7f1;
+  --ink: #14171c;
+  --ink-2: #2a2f37;
+  --muted: #6b7280;
+  --hairline: #e9e3d7;
+  --hairline-2: #efece4;
+
+  --lime: #c4ec5a;
+  --lime-deep: #9bcc2c;
+  --cyan: #8de0e6;
+  --on-accent: #14171c;
+  --on-ink: #ffffff;
+
+  /* Course pastels */
+  --c-lime: #d6e9aa;
+  --c-peach: #ffd6b8;
+  --c-coral: #f6c9c2;
+  --c-lavender: #d3cdf5;
+  --c-mint: #b9e3df;
+  --c-butter: #f6e4a8;
+
+  /* Statuses */
+  --ok: #2f9e6e;
+  --ok-bg: #e3f4ec;
+  --warn: #8d6a18;
+  --warn-dot: #d9a44a;
+  --warn-bg: #fbf0d9;
+  --danger: #cc4f4f;
+  --danger-bg: #fce5e5;
+  --info: #1f7a82;
+  --info-bg: #e1f5f7;
+
+  --focus-ring: rgb(20 23 28 / 0.06);
+  --overlay: rgb(20 23 28 / 0.35);
+  --shadow-sm: 0 1px 2px rgb(20 23 28 / 0.04), 0 0 0 1px rgb(20 23 28 / 0.04);
+  --shadow-md: 0 6px 24px -8px rgb(20 23 28 / 0.12), 0 1px 2px rgb(20 23 28 / 0.04);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0f1114;
+  --surface: #181b20;
+  --surface-2: #1e2228;
+  --ink: #f2efe8;
+  --ink-2: #d4d0c8;
+  --muted: #9aa0aa;
+  --hairline: #2a2f37;
+  --hairline-2: #23272e;
+
+  --on-ink: #14171c;
+
+  --c-lime: #3b4724;
+  --c-peach: #4d3626;
+  --c-coral: #4b2f2b;
+  --c-lavender: #35314f;
+  --c-mint: #24433f;
+  --c-butter: #4a4124;
+
+  --ok: #5cc497;
+  --ok-bg: color-mix(in srgb, #2f9e6e 16%, transparent);
+  --warn: #e2b863;
+  --warn-dot: #e2b863;
+  --warn-bg: color-mix(in srgb, #d9a44a 16%, transparent);
+  --danger: #e07a7a;
+  --danger-bg: color-mix(in srgb, #cc4f4f 16%, transparent);
+  --info: #5fc0c8;
+  --info-bg: color-mix(in srgb, #1f7a82 16%, transparent);
+
+  --focus-ring: rgb(242 239 232 / 0.1);
+  --overlay: rgb(0 0 0 / 0.5);
+}

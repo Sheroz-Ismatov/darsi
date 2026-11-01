@@ -1,0 +1,50 @@
+/* Tailwind v4 theme bound to the CSS variables from tokens.css. */
+@source '../components';
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-hairline: var(--hairline);
+  --color-hairline-2: var(--hairline-2);
+  --color-lime: var(--lime);
+  --color-lime-deep: var(--lime-deep);
+  --color-cyan: var(--cyan);
+  --color-on-accent: var(--on-accent);
+  --color-on-ink: var(--on-ink);
+
+  --color-c-lime: var(--c-lime);
+  --color-c-peach: var(--c-peach);
+  --color-c-coral: var(--c-coral);
+  --color-c-lavender: var(--c-lavender);
+  --color-c-mint: var(--c-mint);
+  --color-c-butter: var(--c-butter);
+
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-warn: var(--warn);
+  --color-warn-dot: var(--warn-dot);
+  --color-warn-bg: var(--warn-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-focus: var(--focus-ring);
+  --color-overlay: var(--overlay);
+
+  --font-sans: 'Onest', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+}

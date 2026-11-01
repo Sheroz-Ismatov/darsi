@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# local tooling
+.claude/settings.local.json

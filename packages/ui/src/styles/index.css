@@ -1,0 +1,5 @@
+/* Entry for apps: `@import 'tailwindcss'; @import '@darsi/ui/styles.css';` */
+@import './fonts.css';
+@import './tokens.css';
+@import './theme.css';
+@import './base.css';

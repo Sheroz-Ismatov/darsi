@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@import '@darsi/ui/styles.css';
+
+@layer base {
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+}

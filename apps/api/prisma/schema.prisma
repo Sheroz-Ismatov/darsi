@@ -1,0 +1,12 @@
+// Data model: TZ.md §7, ARCHITECTURE.md §3.5. Models are added starting from T-06.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  // Migrations bypass connection poolers (Neon "-pooler" host); equal to DATABASE_URL without a pooler.
+  directUrl = env("DIRECT_URL")
+}

@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "design-sample",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5500", "--directory", "design/sample"],
+      "port": 5500
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["apps/api/dist/main.js"],
+      "port": 3000
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["apps/web/node_modules/vite/bin/vite.js", "apps/web"],
+      "port": 5173
+    },
+    {
+      "name": "tma",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["apps/tma/node_modules/vite/bin/vite.js", "apps/tma"],
+      "port": 5174
+    }
+  ]
+}

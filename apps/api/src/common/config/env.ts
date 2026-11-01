@@ -15,6 +15,9 @@ const envSchema = z
       ),
     DATABASE_URL: z.url(),
     REDIS_URL: z.url(),
+    JWT_SECRET: z.string().min(32, 'must be at least 32 characters'),
+    BOT_TOKEN: z.string().regex(/^\d+:[\w-]+$/, 'must look like 123456:ABC-token from @BotFather'),
+    BOT_USERNAME: z.string().regex(/^\w+bot$/i, 'must be the bot username without @'),
     AUTH_DEV_BYPASS: z
       .enum(['true', 'false'])
       .default('false')

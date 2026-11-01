@@ -38,7 +38,16 @@ PostgreSQL и Redis — один из двух вариантов:
 | `pnpm typecheck` | Проверка типов |
 | `pnpm lint` / `pnpm format` | ESLint / Prettier |
 | `pnpm infra:up` / `pnpm infra:down` | Локальные сервисы в Docker |
-| `pnpm --filter @darsi/api db:migrate` | Миграции БД |
+| `pnpm --filter @darsi/api db:migrate` | Создать и применить миграцию (dev-база) |
+| `pnpm --filter @darsi/api db:seed` | Тариф «Пилот», демо-школа; суперадмин — если задан `SEED_SUPERADMIN_TELEGRAM_ID` |
+| `pnpm --filter @darsi/api db:test:prepare` | Применить миграции к тестовой базе (`DATABASE_URL_TEST`) перед `pnpm test` |
+| `pnpm --filter @darsi/api db:test:reset` | Полностью очистить тестовую базу (запускать вручную) |
+
+## Вход в разработке
+
+- Mini App: Telegram передаёт `initData`, API проверяет подпись токеном бота (`BOT_TOKEN`).
+- Веб-панель: Telegram Login Widget работает только на домене, привязанном в @BotFather (`/setdomain`), поэтому локально
+  используется `POST /api/v1/auth/dev-login` с `{"telegramId": <id>}` — только при `AUTH_DEV_BYPASS=true` и не в production.
 
 ## Структура
 

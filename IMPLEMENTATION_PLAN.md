@@ -49,14 +49,14 @@
 - Проверка: `pnpm dev`, визуальная сверка с прототипом на 1280 px и 375 px.
 - Зависит: T-04
 
-**T-06 ⬜ Схема БД ядра и сид**
+**T-06 ✅ Схема БД ядра и сид** — миграция `init` применена к Neon (dev и test), сид создаёт тариф «Пилот» и школу `demo` (суперадмин — при `SEED_SUPERADMIN_TELEGRAM_ID`); интеграционный тест сида на `darsi_test` зелёный. RefreshToken добавлен сразу (нужен в T-07)
 - Цель: Prisma-схема платформы и членств.
 - Файлы: `apps/api/prisma/schema.prisma` (School, Plan, Branch, User, Membership, Consent, RefreshToken, AuditLog), `prisma/seed.ts`.
 - Готово: `prisma migrate dev` на чистой базе; сид создаёт суперадмина и демо-школу.
 - Проверка: `pnpm --filter api db:reset`, просмотр в Prisma Studio.
 - Зависит: T-03
 
-**T-07 ⬜ Авторизация через Telegram**
+**T-07 ✅ Авторизация через Telegram** — `/auth/tma`, `/auth/telegram-login`, `/auth/refresh`, `/auth/logout`, `/auth/dev-login`, `/me`; глобальный guard (всё закрыто, кроме `@Public()`); 15 тестов подписи и e2e на тестовой БД. Проверка на живом Telegram — в T-09; Login Widget заработает после привязки домена в BotFather (T-40), в разработке веб-вход — через `/auth/dev-login`
 - Цель: FR-2, FR-3.
 - Файлы: `src/modules/auth/*` (проверка `initData`, проверка Login Widget, JWT, ротация refresh, `GET /me`), dev-обход `AUTH_DEV_BYPASS`.
 - Готово: поддельная подпись → 401; `auth_date` > 24 ч → 401; refresh ротируется, а повторное использование старого отзывает цепочку; dev-обход запрещён в production.

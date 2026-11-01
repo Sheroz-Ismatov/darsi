@@ -3,6 +3,9 @@ import { parseEnv } from './env';
 const valid = {
   DATABASE_URL: 'postgresql://darsi:darsi@localhost:5432/darsi',
   REDIS_URL: 'redis://localhost:6379',
+  JWT_SECRET: 'x'.repeat(32),
+  BOT_TOKEN: '123456:TEST-token',
+  BOT_USERNAME: 'darsi_test_bot',
 };
 
 describe('parseEnv', () => {
@@ -17,7 +20,13 @@ describe('parseEnv', () => {
 
   it('lists every invalid variable in one error', () => {
     expect(() => parseEnv({ API_PORT: 'abc' })).toThrow(
-      /API_PORT[\s\S]*DATABASE_URL[\s\S]*REDIS_URL/,
+      /API_PORT[\s\S]*DATABASE_URL[\s\S]*REDIS_URL[\s\S]*JWT_SECRET[\s\S]*BOT_TOKEN/,
+    );
+  });
+
+  it('rejects a short JWT secret and a malformed bot token', () => {
+    expect(() => parseEnv({ ...valid, JWT_SECRET: 'short', BOT_TOKEN: 'nope' })).toThrow(
+      /JWT_SECRET: must be at least 32 characters[\s\S]*BOT_TOKEN/,
     );
   });
 

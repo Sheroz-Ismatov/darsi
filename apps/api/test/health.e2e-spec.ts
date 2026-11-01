@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { REDIS } from '../src/common/redis/redis.module';
+import { applyTestEnv } from './helpers/test-env';
 
 // Database and Redis are replaced with fakes: this suite checks the HTTP contract, not the services.
 describe('GET /api/v1/health', () => {
@@ -13,8 +14,7 @@ describe('GET /api/v1/health', () => {
   const redis = { ping: vi.fn(), status: 'end', disconnect: vi.fn() };
 
   beforeAll(async () => {
-    process.env.DATABASE_URL = 'postgresql://darsi:darsi@localhost:5432/darsi_test';
-    process.env.REDIS_URL = 'redis://localhost:6379';
+    applyTestEnv();
 
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(PrismaService)

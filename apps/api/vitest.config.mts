@@ -18,7 +18,11 @@ export default defineConfig({
     include: ['src/**/*.spec.ts', 'test/**/*.e2e-spec.ts', 'test/**/*.int-spec.ts'],
     // Worker threads instead of child processes: forked workers crash on some Windows setups.
     pool: 'threads',
-    // Remote test database (Neon) can be slow to wake up.
+    // Remote test database (Neon) can be slow to wake up; fixtures make dozens of round trips.
+    globalSetup: ['test/global-setup.ts'],
     testTimeout: 30_000,
+    hookTimeout: 60_000,
+    // One file at a time keeps the number of connections to the remote test database low.
+    fileParallelism: false,
   },
 });

@@ -70,9 +70,7 @@ describe('verifyLoginWidget', () => {
 
   it('rejects a changed field', () => {
     const signed = signLoginWidget(fields);
-    expect(failure(() => verifyLoginWidget({ ...signed, id: 43 }, TEST_BOT_TOKEN))).toBe(
-      'INVALID',
-    );
+    expect(failure(() => verifyLoginWidget({ ...signed, id: 43 }, TEST_BOT_TOKEN))).toBe('INVALID');
   });
 
   it('rejects expired widget data', () => {

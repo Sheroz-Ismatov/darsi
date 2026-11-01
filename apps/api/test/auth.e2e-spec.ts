@@ -1,28 +1,12 @@
 import { randomInt } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { configureApp } from '../src/app.setup';
 import { PrismaService } from '../src/common/prisma/prisma.service';
-import { REDIS } from '../src/common/redis/redis.module';
 import { nowSeconds, signInitData, signLoginWidget } from './helpers/telegram-signing';
-import { applyTestEnv } from './helpers/test-env';
+import { createTestApp, hasTestDb } from './helpers/test-app';
 
 // Real test database (DATABASE_URL_TEST), fake Redis. Prepare: pnpm --filter @darsi/api db:test:prepare
-const hasTestDb = Boolean(process.env.DATABASE_URL_TEST);
-
-async function createApp(envOverrides: Record<string, string> = {}): Promise<INestApplication> {
-  applyTestEnv(envOverrides);
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-    .overrideProvider(REDIS)
-    .useValue({ ping: vi.fn(), status: 'end', disconnect: vi.fn() })
-    .compile();
-  const app = moduleRef.createNestApplication({ logger: false });
-  configureApp(app, []);
-  await app.init();
-  return app;
-}
+const createApp = (env: Record<string, string> = {}) => createTestApp({ env });
 
 /** Unique per run so suites never collide with leftovers from previous runs. */
 const telegramId = (): number => 7_000_000_000 + randomInt(0, 999_999_999);
@@ -107,10 +91,7 @@ describe.skipIf(!hasTestDb)('auth (e2e)', () => {
     });
 
     it('rejects a forged token', async () => {
-      const res = await http
-        .get('/api/v1/me')
-        .set('Authorization', 'Bearer not.a.jwt')
-        .expect(401);
+      const res = await http.get('/api/v1/me').set('Authorization', 'Bearer not.a.jwt').expect(401);
       expect(res.body.error.code).toBe('ACCESS_TOKEN_INVALID');
     });
   });
@@ -130,9 +111,17 @@ describe.skipIf(!hasTestDb)('auth (e2e)', () => {
           planId: plan.id,
         },
       });
-      const user = await prisma.user.create({ data: { telegramId: BigInt(id), firstName: 'Admin' } });
+      const user = await prisma.user.create({
+        data: { telegramId: BigInt(id), firstName: 'Admin' },
+      });
       await prisma.membership.create({
-        data: { schoolId: school.id, userId: user.id, role, displayName: 'Admin', status: 'active' },
+        data: {
+          schoolId: school.id,
+          userId: user.id,
+          role,
+          displayName: 'Admin',
+          status: 'active',
+        },
       });
       return id;
     }

@@ -34,7 +34,7 @@ interface NavItem {
     | 'settings';
 }
 
-// TODO(T-08): filter items by role (owner-only: staff, settings; superadmin: platform).
+// TODO(T-11): filter items by role from /me (owner-only: staff, settings; superadmin: platform).
 const ITEMS: NavItem[] = [
   { to: '/', icon: House, label: 'dashboard' },
   { to: '/schedule', icon: CalendarDays, label: 'schedule' },

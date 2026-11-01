@@ -61,7 +61,9 @@ function checkAge(authDateSeconds: number, now: Date, maxAgeSeconds: number): Da
 function isTelegramUser(value: unknown): value is TelegramUserData {
   if (typeof value !== 'object' || value === null) return false;
   const user = value as Record<string, unknown>;
-  return Number.isInteger(user.id) && (user.id as number) > 0 && typeof user.first_name === 'string';
+  return (
+    Number.isInteger(user.id) && (user.id as number) > 0 && typeof user.first_name === 'string'
+  );
 }
 
 /**

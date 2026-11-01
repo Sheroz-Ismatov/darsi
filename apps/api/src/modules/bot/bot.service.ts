@@ -28,7 +28,9 @@ export class BotService implements OnApplicationBootstrap, OnApplicationShutdown
           : undefined,
       });
     });
-    this.bot.catch((error) => this.logger.error(error.error, `Update ${error.ctx.update.update_id}`));
+    this.bot.catch((error) =>
+      this.logger.error(error.error, `Update ${error.ctx.update.update_id}`),
+    );
   }
 
   async onApplicationBootstrap(): Promise<void> {

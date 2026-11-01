@@ -25,7 +25,10 @@ const envSchema = z
       (value) => (value === '' ? undefined : value),
       z
         .url()
-        .refine((url) => url.startsWith('https://'), 'must be an https:// URL (Telegram requirement)')
+        .refine(
+          (url) => url.startsWith('https://'),
+          'must be an https:// URL (Telegram requirement)',
+        )
         .optional(),
     ),
     AUTH_DEV_BYPASS: z

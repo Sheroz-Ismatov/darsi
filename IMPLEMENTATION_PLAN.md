@@ -77,7 +77,7 @@
 - Проверка: ручной прогон в тестовом боте через `cloudflared`.
 - Зависит: T-05, T-07
 
-**T-10 ⬜ CI**
+**T-10 🟨 CI** — `.github/workflows/ci.yml` готов (Postgres-сервис для тестов; install → shared build → lint → format:check → typecheck → миграции → test → build), все шаги прогнаны локально и проходят. Ждёт репозитория на GitHub. Замечание: бандл TMA 218 КБ gzip при бюджете 300 КБ — разбиение на чанки при росте экранов
 - Цель: автоматическая проверка каждого пуша.
 - Файлы: `.github/workflows/ci.yml` (сервисы Postgres и Redis; lint → typecheck → test → build).
 - Готово: пайплайн зелёный на `main`.

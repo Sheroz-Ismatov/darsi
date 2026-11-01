@@ -2,7 +2,13 @@ import { Button } from '@darsi/ui';
 import { useTranslation } from 'react-i18next';
 
 /** Full-screen state while signing in through Telegram, or when it failed. */
-export function SessionFallback({ state, retry }: { state: 'loading' | 'error'; retry: () => void }) {
+export function SessionFallback({
+  state,
+  retry,
+}: {
+  state: 'loading' | 'error';
+  retry: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg px-6 text-center">

@@ -1,5 +1,13 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
+
+// Integration tests read DATABASE_URL_TEST from the repository root .env (CI passes it directly).
+const rootEnv = resolve(import.meta.dirname, '../../.env');
+if (existsSync(rootEnv)) {
+  process.loadEnvFile(rootEnv);
+}
 
 // SWC instead of esbuild: NestJS DI needs emitted decorator metadata.
 export default defineConfig({
@@ -7,8 +15,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.spec.ts', 'test/**/*.e2e-spec.ts'],
+    include: ['src/**/*.spec.ts', 'test/**/*.e2e-spec.ts', 'test/**/*.int-spec.ts'],
     // Worker threads instead of child processes: forked workers crash on some Windows setups.
     pool: 'threads',
+    // Remote test database (Neon) can be slow to wake up.
+    testTimeout: 30_000,
   },
 });

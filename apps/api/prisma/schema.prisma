@@ -1,12 +1,205 @@
-// Data model: TZ.md §7, ARCHITECTURE.md §3.5. Models are added starting from T-06.
+// Data model: TZ.md §7, ARCHITECTURE.md §3.5.
+// Conventions: UUID v7 keys, snake_case tables/columns, timestamptz in UTC,
+// money as BigInt in minor units, soft delete via archived_at where history matters.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   // Migrations bypass connection poolers (Neon "-pooler" host); equal to DATABASE_URL without a pooler.
   directUrl = env("DIRECT_URL")
+}
+
+enum Locale {
+  ru
+  tg
+}
+
+enum Currency {
+  TJS
+  RUB
+}
+
+enum Role {
+  owner
+  admin
+  teacher
+  parent
+}
+
+enum MembershipStatus {
+  invited
+  active
+  deactivated
+}
+
+enum SchoolStatus {
+  active
+  blocked
+}
+
+/// Darsi subscription plan: limits only, no billing in the MVP (TZ FR-6).
+model Plan {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  name         String
+  maxStudents  Int      @map("max_students")
+  maxStaff     Int      @map("max_staff")
+  maxStorageMb Int      @map("max_storage_mb")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  schools School[]
+
+  @@map("plans")
+}
+
+/// Tenant. Every business row belongs to exactly one school.
+model School {
+  id                   String       @id @default(uuid(7)) @db.Uuid
+  name                 String
+  /// Public code for the join deep link: t.me/<bot>?startapp=<code>.
+  code                 String       @unique
+  currency             Currency
+  /// IANA zone, e.g. Asia/Dushanbe; lesson times are shown in it.
+  timezone             String
+  defaultLocale        Locale       @default(ru) @map("default_locale")
+  /// TODO(T-13): relation to File once the files module exists.
+  logoFileId           String?      @map("logo_file_id") @db.Uuid
+  address              String?
+  phone                String?
+  description          String?
+  /// Absence policy (TZ FR-8).
+  chargeAbsent         Boolean      @default(true) @map("charge_absent")
+  chargeExcused        Boolean      @default(false) @map("charge_excused")
+  reminderHoursBefore  Int          @default(3) @map("reminder_hours_before")
+  debtRemindersEnabled Boolean      @default(true) @map("debt_reminders_enabled")
+  planId               String       @map("plan_id") @db.Uuid
+  status               SchoolStatus @default(active)
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  plan        Plan         @relation(fields: [planId], references: [id])
+  branches    Branch[]
+  memberships Membership[]
+  consents    Consent[]
+  auditLogs   AuditLog[]
+
+  @@index([planId])
+  @@map("schools")
+}
+
+/// One per school in the MVP; branches UI comes in v2.
+model Branch {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  schoolId  String   @map("school_id") @db.Uuid
+  name      String
+  address   String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId])
+  @@map("branches")
+}
+
+/// A person, identified by their Telegram account.
+model User {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  telegramId   BigInt    @unique @map("telegram_id")
+  firstName    String    @map("first_name")
+  lastName     String?   @map("last_name")
+  username     String?
+  /// From Telegram "share contact".
+  phone        String?
+  locale       Locale    @default(ru)
+  isSuperadmin Boolean   @default(false) @map("is_superadmin")
+  /// Set when the Bot API answers 403 (TZ FR-47).
+  botBlocked   Boolean   @default(false) @map("bot_blocked")
+  lastSeenAt   DateTime? @map("last_seen_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  memberships   Membership[]
+  consents      Consent[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+/// Role of a user in a school. userId stays null until the invite is accepted (T-12).
+model Membership {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  schoolId    String           @map("school_id") @db.Uuid
+  userId      String?          @map("user_id") @db.Uuid
+  role        Role
+  displayName String           @map("display_name")
+  phone       String?
+  status      MembershipStatus @default(invited)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@unique([schoolId, userId, role])
+  @@index([userId])
+  @@map("memberships")
+}
+
+/// Personal data processing consent (TZ FR-62).
+model Consent {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  policyVersion String   @map("policy_version")
+  acceptedAt    DateTime @default(now()) @map("accepted_at") @db.Timestamptz(3)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, schoolId, policyVersion])
+  @@index([schoolId])
+  @@map("consents")
+}
+
+/// Rotating refresh tokens; reusing a rotated token revokes its whole family (T-07).
+model RefreshToken {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  /// SHA-256 of the token; the token itself is never stored.
+  tokenHash String    @unique @map("token_hash")
+  familyId  String    @map("family_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  userAgent String?   @map("user_agent")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+/// Append-only change journal (TZ FR-60). schoolId is null for platform-level actions.
+model AuditLog {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  schoolId    String?  @map("school_id") @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  entity      String
+  entityId    String   @map("entity_id")
+  action      String
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  actor  User?   @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, entity, entityId])
+  @@index([schoolId, createdAt])
+  @@map("audit_logs")
 }

@@ -16,7 +16,8 @@
    - Выключите **Connection pooling** → скопируйте строку (без `-pooler`) → это **`DIRECT_URL`**.
    - Обе строки заканчиваются на `?sslmode=require` — так и должно быть.
 4. Слева **Databases** → **New database** → имя `darsi_test` → **Create**.
-   Снова **Connect**, в выпадающем списке **Database** выберите `darsi_test`, пулинг включён → строка → **`DATABASE_URL_TEST`**.
+   Снова **Connect**, в выпадающем списке **Database** выберите `darsi_test`, **пулинг выключен** (без `-pooler`) → строка → **`DATABASE_URL_TEST`**.
+   Тесты применяют к этой базе миграции, а через пулер они не работают.
 
 ## 2. Upstash — Redis
 
@@ -37,7 +38,7 @@
 ```
 DATABASE_URL=postgresql://...-pooler...neon.tech/darsi?sslmode=require
 DIRECT_URL=postgresql://...neon.tech/darsi?sslmode=require
-DATABASE_URL_TEST=postgresql://...-pooler...neon.tech/darsi_test?sslmode=require
+DATABASE_URL_TEST=postgresql://...neon.tech/darsi_test?sslmode=require
 REDIS_URL=rediss://default:...@....upstash.io:6379
 ```
 

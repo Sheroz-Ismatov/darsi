@@ -13,6 +13,8 @@ export function applyTestEnv(overrides: Record<string, string> = {}): void {
     JWT_SECRET: 'test-jwt-secret-with-at-least-32-characters',
     BOT_TOKEN: TEST_BOT_TOKEN,
     BOT_USERNAME: 'darsi_test_bot',
+    // Never poll Telegram from tests, even if the developer's .env enables it.
+    BOT_MODE: 'off',
     AUTH_DEV_BYPASS: 'false',
     ...overrides,
   });

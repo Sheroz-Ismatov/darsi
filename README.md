@@ -49,6 +49,20 @@ PostgreSQL и Redis — один из двух вариантов:
 - Веб-панель: Telegram Login Widget работает только на домене, привязанном в @BotFather (`/setdomain`), поэтому локально
   используется `POST /api/v1/auth/dev-login` с `{"telegramId": <id>}` — только при `AUTH_DEV_BYPASS=true` и не в production.
 
+## Mini App в Telegram (разработка)
+
+Telegram открывает Mini App только по публичному HTTPS-адресу. Один туннель отдаёт и приложение, и API
+(Vite проксирует `/api` на `localhost:3000`).
+
+1. Один раз: `winget install --id Cloudflare.cloudflared`.
+2. `pnpm --filter @darsi/tma dev` — Mini App на `localhost:5174`.
+3. `pnpm tunnel:tma` — в выводе появится адрес `https://<слова>.trycloudflare.com`.
+4. В `.env`: `TMA_URL=<этот адрес>`, `BOT_MODE=polling`.
+5. `pnpm --filter @darsi/api dev` — API и бот; при старте бот ставит кнопку меню «Дарси».
+6. В Telegram откройте бота → `/start` → «Открыть Дарси».
+
+Адрес quick-туннеля меняется при каждом запуске — после перезапуска туннеля обновите `TMA_URL` и перезапустите API.
+
 ## Структура
 
 ```

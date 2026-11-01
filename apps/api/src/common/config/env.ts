@@ -18,6 +18,16 @@ const envSchema = z
     JWT_SECRET: z.string().min(32, 'must be at least 32 characters'),
     BOT_TOKEN: z.string().regex(/^\d+:[\w-]+$/, 'must look like 123456:ABC-token from @BotFather'),
     BOT_USERNAME: z.string().regex(/^\w+bot$/i, 'must be the bot username without @'),
+    // TODO(T-40): add `webhook` for production.
+    BOT_MODE: z.enum(['polling', 'off']).default('off'),
+    /** Public HTTPS URL of the Mini App; the bot's buttons open it. `TMA_URL=` counts as unset. */
+    TMA_URL: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z
+        .url()
+        .refine((url) => url.startsWith('https://'), 'must be an https:// URL (Telegram requirement)')
+        .optional(),
+    ),
     AUTH_DEV_BYPASS: z
       .enum(['true', 'false'])
       .default('false')

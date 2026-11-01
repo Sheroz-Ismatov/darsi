@@ -12,6 +12,21 @@ export function isInsideTelegram(): boolean {
 export const DEV_OUTSIDE_TELEGRAM =
   import.meta.env.DEV && import.meta.env.VITE_DEV_MOCK_INIT_DATA === 'true';
 
+/** Raw signed launch data for POST /auth/tma; empty outside Telegram. */
+export function initData(): string {
+  return webApp?.initData ?? '';
+}
+
+/**
+ * Launch payload (school code or invite, T-12): `start_param` for t.me/<bot>?startapp links,
+ * `?start=` for the bot's /start button (see apps/api bot/start-reply.ts).
+ */
+export function launchParam(): string | null {
+  return (
+    webApp?.initDataUnsafe.start_param ?? new URLSearchParams(window.location.search).get('start')
+  );
+}
+
 export function telegramLocale(): Locale {
   const code = webApp?.initDataUnsafe.user?.language_code;
   return LOCALES.find((locale) => locale === code) ?? DEFAULT_LOCALE;

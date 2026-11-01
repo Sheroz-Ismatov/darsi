@@ -1,6 +1,7 @@
 import { CalendarDays, CreditCard, House, BookOpen, UserRound, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, Navigate } from 'react-router';
+import { ParentHomeScreen } from '../pages/parent/ParentHomeScreen';
 import { PlaceholderScreen } from '../pages/PlaceholderScreen';
 import { TmaLayout } from './layout/TmaLayout';
 
@@ -39,7 +40,7 @@ export const router = createBrowserRouter([
     path: '/parent',
     element: <ParentLayout />,
     children: [
-      { index: true, element: <PlaceholderScreen title="home" /> },
+      { index: true, element: <ParentHomeScreen /> },
       { path: 'schedule', element: <PlaceholderScreen title="schedule" /> },
       { path: 'courses', element: <PlaceholderScreen title="courses" /> },
       { path: 'payments', element: <PlaceholderScreen title="payments" /> },

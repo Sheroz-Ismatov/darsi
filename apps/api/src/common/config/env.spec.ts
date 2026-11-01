@@ -36,6 +36,13 @@ describe('parseEnv', () => {
     );
   });
 
+  it('treats an empty TMA_URL as unset and requires https otherwise', () => {
+    expect(parseEnv({ ...valid, TMA_URL: '' }).TMA_URL).toBeUndefined();
+    expect(() => parseEnv({ ...valid, TMA_URL: 'http://localhost:5174' })).toThrow(
+      /TMA_URL: must be an https:\/\/ URL/,
+    );
+  });
+
   it('allows the auth dev bypass in development', () => {
     expect(parseEnv({ ...valid, AUTH_DEV_BYPASS: 'true' }).AUTH_DEV_BYPASS).toBe(true);
   });

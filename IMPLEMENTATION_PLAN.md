@@ -70,7 +70,7 @@
 - Проверка: e2e-тесты изоляции.
 - Зависит: T-07
 
-**T-09 ⬜ Бот (каркас)**
+**T-09 ✅ Бот (каркас)** — `/start [payload]` с кнопкой Mini App (ru/tg), кнопка меню «Дарси», long polling (`BOT_MODE`); TMA входит через `/auth/tma` и показывает «Привет, имя!». Payload передаётся в `?start=` (кнопка web_app не заполняет `start_param`). **Проверено вживую 01.11.2026** на Telegram Android через cloudflared: подпись initData принята, `/me` = 200. Попутно: из логов убраны заголовки запроса (IP клиента — ПДн)
 - Цель: точка входа в TMA.
 - Файлы: `src/modules/bot/*` (grammY, `/start` с payload школы или приглашения, кнопка «Открыть Дарси», long-polling в dev, webhook в prod).
 - Готово: `/start school_x` открывает TMA с `startapp=school_x`; кнопка меню бота открывает TMA.

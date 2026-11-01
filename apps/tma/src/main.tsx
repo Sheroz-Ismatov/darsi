@@ -4,8 +4,10 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
 import './app/i18n';
 import { router } from './app/router';
+import { SessionProvider } from './app/session';
 import { DEV_OUTSIDE_TELEGRAM, initTelegram, isInsideTelegram } from './app/telegram';
 import { OpenInTelegramScreen } from './pages/OpenInTelegramScreen';
+import { SessionFallback } from './pages/SessionFallback';
 import './styles.css';
 
 const root = document.getElementById('root');
@@ -21,7 +23,11 @@ createRoot(root).render(
   <StrictMode>
     {canRun ? (
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <SessionProvider
+          fallback={(state, retry) => <SessionFallback state={state} retry={retry} />}
+        >
+          <RouterProvider router={router} />
+        </SessionProvider>
       </QueryClientProvider>
     ) : (
       <OpenInTelegramScreen />

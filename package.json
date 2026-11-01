@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "infra:up": "docker compose -f infra/docker-compose.yml up -d --wait",
-    "infra:down": "docker compose -f infra/docker-compose.yml down"
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "tunnel:tma": "cloudflared tunnel --url http://localhost:5174"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

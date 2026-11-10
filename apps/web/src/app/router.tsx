@@ -1,26 +1,37 @@
-import { createBrowserRouter, type RouteObject } from 'react-router';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { UiShowcasePage } from '../pages/dev/UiShowcasePage';
-import { AppLayout } from './layout/AppLayout';
+import { PlatformPage } from '../pages/platform/PlatformPage';
+import { SCHOOL_SECTIONS, SECTION_PATH } from './auth/access';
+import { RequireSession, SectionRoute } from './auth/guards';
+import { LoginPage } from './auth/LoginPage';
 
-// TODO(T-11…T-29): replace placeholders with real pages as their tasks land.
-const sections: RouteObject[] = [
-  { index: true, element: <PlaceholderPage title="dashboard" /> },
-  { path: 'schedule', element: <PlaceholderPage title="schedule" /> },
-  { path: 'courses', element: <PlaceholderPage title="courses" /> },
-  { path: 'students', element: <PlaceholderPage title="students" /> },
-  { path: 'requests', element: <PlaceholderPage title="requests" /> },
-  { path: 'subscriptions', element: <PlaceholderPage title="subscriptions" /> },
-  { path: 'payments', element: <PlaceholderPage title="payments" /> },
-  { path: 'reports', element: <PlaceholderPage title="reports" /> },
-  { path: 'staff', element: <PlaceholderPage title="staff" /> },
-  { path: 'settings', element: <PlaceholderPage title="settings" /> },
-];
+// TODO(T-13…T-29): replace placeholders with real pages as their tasks land.
+const sections: RouteObject[] = SCHOOL_SECTIONS.map((section) => ({
+  ...(section === 'dashboard' ? { index: true } : { path: SECTION_PATH[section].slice(1) }),
+  element: (
+    <SectionRoute section={section}>
+      <PlaceholderPage title={section} />
+    </SectionRoute>
+  ),
+}));
+
+sections.push({
+  path: 'platform',
+  element: (
+    <SectionRoute section="platform">
+      <PlatformPage />
+    </SectionRoute>
+  ),
+});
 
 if (import.meta.env.DEV) {
   sections.push({ path: 'ui', element: <UiShowcasePage /> });
 }
 
+sections.push({ path: '*', element: <Navigate to="/" replace /> });
+
 export const router = createBrowserRouter([
-  { path: '/', element: <AppLayout />, children: sections },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/', element: <RequireSession />, children: sections },
 ]);

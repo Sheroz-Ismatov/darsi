@@ -14,6 +14,15 @@
       "port": 3000
     },
     {
+      "name": "api-dev-login",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "-e",
+        "process.env.AUTH_DEV_BYPASS='true';process.env.BOT_MODE='off';require('./apps/api/dist/main.js')"
+      ],
+      "port": 3000
+    },
+    {
       "name": "web",
       "runtimeExecutable": "node",
       "runtimeArgs": ["apps/web/node_modules/vite/bin/vite.js", "apps/web"],

@@ -11,7 +11,9 @@ interface AccessTokenPayload {
   sub: string;
 }
 
-const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
+/** Secrets handed to clients (refresh and invite tokens) are stored only as this hash. */
+export const hashToken = (token: string): string =>
+  createHash('sha256').update(token).digest('hex');
 
 const unauthorized = (code: string, message: string) => new AppError(code, message, 401);
 

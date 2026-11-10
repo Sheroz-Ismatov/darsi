@@ -48,6 +48,9 @@ PostgreSQL и Redis — один из двух вариантов:
 - Mini App: Telegram передаёт `initData`, API проверяет подпись токеном бота (`BOT_TOKEN`).
 - Веб-панель: Telegram Login Widget работает только на домене, привязанном в @BotFather (`/setdomain`), поэтому локально
   используется `POST /api/v1/auth/dev-login` с `{"telegramId": <id>}` — только при `AUTH_DEV_BYPASS=true` и не в production.
+  На странице входа (`localhost:5173/login`) в режиме разработки есть форма «Вход для разработки»: введите Telegram ID.
+  ID из `SEED_SUPERADMIN_TELEGRAM_ID` открывает раздел «Школы» (суперадмин). Аккаунт без роли владельца или
+  администратора видит экран «Нет доступа».
 
 ## Mini App в Telegram (разработка)
 

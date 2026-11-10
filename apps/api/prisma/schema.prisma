@@ -81,10 +81,11 @@ model School {
   updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   plan        Plan         @relation(fields: [planId], references: [id])
-  branches    Branch[]
-  memberships Membership[]
-  consents    Consent[]
-  auditLogs   AuditLog[]
+  branches     Branch[]
+  memberships  Membership[]
+  consents     Consent[]
+  auditLogs    AuditLog[]
+  inviteTokens InviteToken[]
 
   @@index([planId])
   @@map("schools")
@@ -121,10 +122,11 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  memberships   Membership[]
-  consents      Consent[]
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
+  memberships    Membership[]
+  consents       Consent[]
+  refreshTokens  RefreshToken[]
+  auditLogs      AuditLog[]
+  createdInvites InviteToken[]
 
   @@map("users")
 }
@@ -141,12 +143,36 @@ model Membership {
   createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  user   User?  @relation(fields: [userId], references: [id])
+  school       School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id])
+  inviteTokens InviteToken[]
 
   @@unique([schoolId, userId, role])
   @@index([userId])
   @@map("memberships")
+}
+
+/// One-time invite link for an invited membership (TZ FR-1, FR-10, FR-17); accepted in T-12.
+model InviteToken {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  schoolId        String    @map("school_id") @db.Uuid
+  membershipId    String    @map("membership_id") @db.Uuid
+  /// SHA-256 of the token; the token itself is shown once and never stored.
+  tokenHash       String    @unique @map("token_hash")
+  expiresAt       DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt          DateTime? @map("used_at") @db.Timestamptz(3)
+  /// Set when a newer invite replaces this one.
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdByUserId String?   @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  createdBy  User?      @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId])
+  @@index([membershipId])
+  @@map("invite_tokens")
 }
 
 /// Personal data processing consent (TZ FR-62).

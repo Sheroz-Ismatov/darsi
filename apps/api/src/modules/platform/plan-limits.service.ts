@@ -5,9 +5,17 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 
 export const STAFF_ROLES: Role[] = ['owner', 'admin', 'teacher'];
 
+/** A person: the user when linked, otherwise the invited membership itself. */
+const personKey = (m: { id: string; userId: string | null }): string => m.userId ?? m.id;
+
 /** One person may hold several staff roles; invited memberships have no user yet. */
 export function countStaff(memberships: Array<{ id: string; userId: string | null }>): number {
-  return new Set(memberships.map((m) => m.userId ?? m.id)).size;
+  return new Set(memberships.map(personKey)).size;
+}
+
+export interface StaffUsage {
+  used: number;
+  max: number;
 }
 
 /**
@@ -18,8 +26,30 @@ export function countStaff(memberships: Array<{ id: string; userId: string | nul
 export class PlanLimitsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Call before adding a new person to the staff; a second role for the same person is free. */
-  async assertCanAddStaff(schoolId: string): Promise<void> {
+  /** Staff seats taken (invited people included) and the plan maximum. */
+  async staffUsage(schoolId: string): Promise<StaffUsage> {
+    const { max, people } = await this.loadStaff(schoolId);
+    return { used: people.size, max };
+  }
+
+  /**
+   * Call before adding a person to the staff. A user who already holds a seat in this school
+   * (another active or invited staff role) takes no extra one.
+   */
+  async assertCanAddStaff(schoolId: string, userId?: string | null): Promise<void> {
+    const { max, people } = await this.loadStaff(schoolId);
+    if (userId && people.has(userId)) return;
+    if (people.size >= max) {
+      throw new AppError(
+        'PLAN_LIMIT_REACHED',
+        `The plan allows at most ${max} staff members`,
+        422,
+        { limit: 'staff', max },
+      );
+    }
+  }
+
+  private async loadStaff(schoolId: string): Promise<{ max: number; people: Set<string> }> {
     const school = await this.prisma.school.findUnique({
       where: { id: schoolId },
       select: {
@@ -33,17 +63,6 @@ export class PlanLimitsService {
     if (!school) {
       throw new AppError('SCHOOL_NOT_FOUND', 'School not found', 404);
     }
-    const max = school.plan.maxStaff;
-    if (countStaff(school.memberships) >= max) {
-      throw new AppError(
-        'PLAN_LIMIT_REACHED',
-        `The plan allows at most ${max} staff members`,
-        422,
-        {
-          limit: 'staff',
-          max,
-        },
-      );
-    }
+    return { max: school.plan.maxStaff, people: new Set(school.memberships.map(personKey)) };
   }
 }

@@ -1,21 +1,15 @@
 import type { OwnerInviteResponse, PlanDto, PlatformSchoolDto } from '@darsi/shared';
-import { Button, Card, Dialog, EmptyState, Input, KpiTile, Select, StatusBadge } from '@darsi/ui';
+import { Button, Card, Dialog, EmptyState, KpiTile, Select, StatusBadge } from '@darsi/ui';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '../../app/layout/PageHeader';
+import { InviteLinkDialog } from '../../features/invites/InviteLinkDialog';
 import { errorText } from '../../lib/error-text';
+import { formatDateTime as formatDate } from '../../lib/format';
 import { PlanDialog } from './PlanDialog';
 import { useIssueOwnerInvite, usePlans, useSchools, useUpdateSchool } from './platform-api';
 import { SchoolDialog } from './SchoolDialog';
-
-const dateTime = new Intl.DateTimeFormat('ru', {
-  day: 'numeric',
-  month: 'long',
-  hour: '2-digit',
-  minute: '2-digit',
-});
-const formatDate = (iso: string): string => dateTime.format(new Date(iso));
 
 type Modal =
   | { kind: 'school' }
@@ -25,50 +19,6 @@ type Modal =
 
 const TH = 'px-5 py-3 text-left text-xs font-semibold tracking-wide text-muted uppercase';
 const TD = 'px-5 py-4 align-top';
-
-function InviteDialog({
-  school,
-  invite,
-  onClose,
-}: {
-  school: PlatformSchoolDto;
-  invite: OwnerInviteResponse;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    void navigator.clipboard.writeText(invite.url).then(() => setCopied(true));
-  };
-
-  return (
-    <Dialog
-      open
-      onClose={onClose}
-      title={t('platform.inviteTitle')}
-      closeLabel={t('platform.close')}
-      footer={<Button onClick={onClose}>{t('platform.done')}</Button>}
-    >
-      <p className="mt-0 mb-4 text-ink-2">
-        {t('platform.inviteText', { name: school.name, date: formatDate(invite.expiresAt) })}
-      </p>
-      <div className="flex gap-2">
-        <Input
-          readOnly
-          value={invite.url}
-          aria-label={t('platform.inviteTitle')}
-          className="font-mono text-[13px]"
-          onFocus={(event) => event.target.select()}
-        />
-        <Button variant="lime" className="shrink-0" onClick={copy}>
-          {t(copied ? 'platform.copied' : 'platform.copy')}
-        </Button>
-      </div>
-      <p className="mt-3 mb-0 text-xs text-muted">{t('platform.inviteOnce')}</p>
-    </Dialog>
-  );
-}
 
 /** W-14: schools, plans and limits, blocking, owner invite links (TZ FR-1, FR-6). */
 export function PlatformPage() {
@@ -322,7 +272,15 @@ export function PlatformPage() {
       {modal?.kind === 'school' && <SchoolDialog plans={planList} onClose={close} />}
       {modal?.kind === 'plan' && <PlanDialog plan={modal.plan} onClose={close} />}
       {modal?.kind === 'invite' && (
-        <InviteDialog school={modal.school} invite={modal.invite} onClose={close} />
+        <InviteLinkDialog
+          title={t('inviteLink.ownerTitle')}
+          text={t('inviteLink.ownerText', {
+            name: modal.school.name,
+            date: formatDate(modal.invite.expiresAt),
+          })}
+          invite={modal.invite}
+          onClose={close}
+        />
       )}
       {modal?.kind === 'block' && (
         <Dialog

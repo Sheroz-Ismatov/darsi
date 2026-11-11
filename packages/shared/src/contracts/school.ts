@@ -7,6 +7,15 @@ export const REMINDER_HOURS_MAX = 48;
 
 const PHONE_PATTERN = /^[+\d][\d\s()-]{4,30}$/;
 
+/** Optional phone number: an empty string clears it, so it is stored as null. */
+export const clearablePhoneSchema = z
+  .string()
+  .trim()
+  .max(32)
+  .refine((value) => value === '' || PHONE_PATTERN.test(value), 'Invalid phone number')
+  .transform((value) => (value === '' ? null : value))
+  .nullable();
+
 /** Optional free text: an empty string clears the field, so it is stored as null. */
 const clearableText = (max: number) =>
   z
@@ -21,13 +30,7 @@ export const updateSchoolSettingsRequestSchema = z
   .object({
     name: z.string().trim().min(2).max(120),
     address: clearableText(200),
-    phone: z
-      .string()
-      .trim()
-      .max(32)
-      .refine((value) => value === '' || PHONE_PATTERN.test(value), 'Invalid phone number')
-      .transform((value) => (value === '' ? null : value))
-      .nullable(),
+    phone: clearablePhoneSchema,
     description: clearableText(1000),
     timezone: timeZoneSchema,
     currency: z.enum(CURRENCIES),

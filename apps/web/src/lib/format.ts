@@ -19,3 +19,15 @@ export function formatDateTime(iso: string, timeZone?: string): string {
   }
   return formatter.format(new Date(iso));
 }
+
+const dayFormatter = new Intl.DateTimeFormat('ru', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+/** «1 декабря 2026» for a calendar date `YYYY-MM-DD`: it has no time, so no zone shifts it. */
+export function formatDay(date: string): string {
+  return dayFormatter.format(new Date(`${date}T00:00:00Z`));
+}

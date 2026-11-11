@@ -41,6 +41,26 @@ enum SchoolStatus {
   blocked
 }
 
+enum CourseFormat {
+  offline
+  online
+}
+
+enum CourseKind {
+  group
+  individual
+}
+
+/// Course pastels, DESIGN_SYSTEM.md §1.2.
+enum CourseColor {
+  lime
+  peach
+  coral
+  lavender
+  mint
+  butter
+}
+
 /// Darsi subscription plan: limits only, no billing in the MVP (TZ FR-6).
 model Plan {
   id           String   @id @default(uuid(7)) @db.Uuid
@@ -80,12 +100,14 @@ model School {
   createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  plan        Plan         @relation(fields: [planId], references: [id])
+  plan         Plan          @relation(fields: [planId], references: [id])
   branches     Branch[]
   memberships  Membership[]
   consents     Consent[]
   auditLogs    AuditLog[]
   inviteTokens InviteToken[]
+  courses      Course[]
+  groups       Group[]
 
   @@index([planId])
   @@map("schools")
@@ -99,7 +121,8 @@ model Branch {
   address   String?
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  school School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  groups Group[]
 
   @@index([schoolId])
   @@map("branches")
@@ -146,6 +169,8 @@ model Membership {
   school       School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   user         User?         @relation(fields: [userId], references: [id])
   inviteTokens InviteToken[]
+  /// Groups this teacher membership leads.
+  groups       Group[]
 
   @@unique([schoolId, userId, role])
   @@index([userId])
@@ -173,6 +198,58 @@ model InviteToken {
   @@index([schoolId])
   @@index([membershipId])
   @@map("invite_tokens")
+}
+
+/// Course of a school (TZ FR-11). Deleted only while it has no groups; otherwise archived.
+model Course {
+  id            String       @id @default(uuid(7)) @db.Uuid
+  schoolId      String       @map("school_id") @db.Uuid
+  name          String
+  description   String?
+  format        CourseFormat
+  kind          CourseKind
+  ageFrom       Int?         @map("age_from")
+  ageTo         Int?         @map("age_to")
+  showInCatalog Boolean      @default(true) @map("show_in_catalog")
+  color         CourseColor
+  /// Key from COURSE_ICONS in @darsi/shared.
+  icon          String
+  archivedAt    DateTime?    @map("archived_at") @db.Timestamptz(3)
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  school School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  groups Group[]
+
+  @@index([schoolId])
+  @@map("courses")
+}
+
+/// Group of a course (TZ FR-12). Never deleted, only archived.
+model Group {
+  id                  String    @id @default(uuid(7)) @db.Uuid
+  schoolId            String    @map("school_id") @db.Uuid
+  branchId            String    @map("branch_id") @db.Uuid
+  courseId            String    @map("course_id") @db.Uuid
+  name                String
+  teacherMembershipId String    @map("teacher_membership_id") @db.Uuid
+  capacity            Int
+  meetingUrl          String?   @map("meeting_url")
+  startsOn            DateTime? @map("starts_on") @db.Date
+  endsOn              DateTime? @map("ends_on") @db.Date
+  archivedAt          DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  school  School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  branch  Branch     @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  course  Course     @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  teacher Membership @relation(fields: [teacherMembershipId], references: [id], onDelete: Restrict)
+
+  @@index([schoolId])
+  @@index([courseId])
+  @@index([teacherMembershipId])
+  @@map("groups")
 }
 
 /// Personal data processing consent (TZ FR-62).

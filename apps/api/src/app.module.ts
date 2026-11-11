@@ -5,6 +5,7 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BotModule } from './modules/bot/bot.module';
+import { CoursesModule } from './modules/courses/courses.module';
 import { HealthModule } from './modules/health/health.module';
 import { InvitesModule } from './modules/invites/invites.module';
 import { PlatformModule } from './modules/platform/platform.module';
@@ -19,6 +20,7 @@ import { StaffModule } from './modules/staff/staff.module';
     RedisModule,
     AuthModule,
     BotModule,
+    CoursesModule,
     HealthModule,
     InvitesModule,
     PlatformModule,

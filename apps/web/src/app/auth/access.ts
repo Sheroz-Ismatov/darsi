@@ -38,6 +38,11 @@ export const SECTION_PATH: Record<Section, string> = {
   platform: '/platform',
 };
 
+/** Pages that live outside a section path but keep its menu item highlighted. */
+export const SECTION_SUBPATHS: Partial<Record<Section, readonly string[]>> = {
+  courses: ['/groups/'],
+};
+
 /** The panel is for owners and admins (TZ FR-3); teachers and parents use the Mini App. */
 export function webSchools(me: MeResponse): WebSchool[] {
   const schools = new Map<string, WebSchool>();

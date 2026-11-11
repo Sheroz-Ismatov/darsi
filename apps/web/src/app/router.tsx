@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
+import { CoursesPage } from '../pages/courses/CoursesPage';
+import { GroupPage } from '../pages/courses/GroupPage';
 import { PlaceholderPage } from '../pages/PlaceholderPage';
 import { UiShowcasePage } from '../pages/dev/UiShowcasePage';
 import { PlatformPage } from '../pages/platform/PlatformPage';
@@ -10,11 +12,12 @@ import { RequireSession, SectionRoute } from './auth/guards';
 import { LoginPage } from './auth/LoginPage';
 
 const PAGES: Partial<Record<Section, ReactNode>> = {
+  courses: <CoursesPage />,
   staff: <StaffPage />,
   settings: <SettingsPage />,
 };
 
-// TODO(T-15…T-29): replace placeholders with real pages as their tasks land.
+// TODO(T-16…T-29): replace placeholders with real pages as their tasks land.
 const sections: RouteObject[] = SCHOOL_SECTIONS.map((section) => ({
   ...(section === 'dashboard' ? { index: true } : { path: SECTION_PATH[section].slice(1) }),
   element: (
@@ -23,6 +26,15 @@ const sections: RouteObject[] = SCHOOL_SECTIONS.map((section) => ({
     </SectionRoute>
   ),
 }));
+
+sections.push({
+  path: 'groups/:id',
+  element: (
+    <SectionRoute section="courses">
+      <GroupPage />
+    </SectionRoute>
+  ),
+});
 
 sections.push({
   path: 'platform',

@@ -17,8 +17,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { NavLink } from 'react-router';
-import { SECTION_PATH, type Section } from '../auth/access';
+import { NavLink, useLocation } from 'react-router';
+import { SECTION_PATH, SECTION_SUBPATHS, type Section } from '../auth/access';
 import { useAuth, useSession } from '../auth/session';
 
 const ICONS: Record<Section, LucideIcon> = {
@@ -82,6 +82,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { t } = useTranslation();
   const { signOut } = useAuth();
   const { sections } = useSession();
+  const { pathname } = useLocation();
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
 
   return (
@@ -106,6 +107,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {sections.map((section) => {
           const Icon = ICONS[section];
           const to = SECTION_PATH[section];
+          const onSubpage = (SECTION_SUBPATHS[section] ?? []).some((p) => pathname.startsWith(p));
           return (
             <NavLink
               key={section}
@@ -116,7 +118,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 cn(
                   'flex items-center gap-3 rounded-[16px] text-sm font-semibold transition',
                   collapsed ? 'size-12 justify-center' : 'h-11 px-3.5',
-                  isActive ? 'bg-ink text-on-ink' : 'text-ink-2 hover:bg-surface',
+                  isActive || onSubpage ? 'bg-ink text-on-ink' : 'text-ink-2 hover:bg-surface',
                 )
               }
             >

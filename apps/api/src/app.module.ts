@@ -8,6 +8,7 @@ import { BotModule } from './modules/bot/bot.module';
 import { HealthModule } from './modules/health/health.module';
 import { InvitesModule } from './modules/invites/invites.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { SchoolsModule } from './modules/schools/schools.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PlatformModule } from './modules/platform/platform.module';
     HealthModule,
     InvitesModule,
     PlatformModule,
+    SchoolsModule,
   ],
 })
 export class AppModule {}

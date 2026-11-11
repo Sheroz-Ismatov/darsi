@@ -20,6 +20,7 @@ import {
   Segmented,
   Select,
   StatusBadge,
+  Switch,
   Tag,
   Textarea,
 } from '@darsi/ui';
@@ -112,6 +113,8 @@ export function UiShowcasePage() {
   const [attendance, setAttendance] = useState<AttendanceStatus>('present');
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [chip, setChip] = useState('all');
+  const [charge, setCharge] = useState(true);
+  const [excused, setExcused] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
@@ -277,6 +280,27 @@ export function UiShowcasePage() {
           <Field label="Описание" htmlFor="f-desc" hint="Видно родителям в каталоге">
             <Textarea id="f-desc" rows={2} />
           </Field>
+        </div>
+        <div className="flex max-w-2xl flex-col gap-3">
+          {(
+            [
+              ['f-charge', 'Списывать занятие при пропуске', charge, setCharge],
+              ['f-excused', 'Списывать при уважительной причине', excused, setExcused],
+            ] as const
+          ).map(([id, label, checked, set]) => (
+            <div key={id} className="flex items-center justify-between gap-4">
+              <label htmlFor={id} className="text-sm font-semibold">
+                {label}
+              </label>
+              <Switch id={id} checked={checked} onChange={set} />
+            </div>
+          ))}
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="f-disabled" className="text-sm font-semibold text-muted">
+              Недоступен
+            </label>
+            <Switch id="f-disabled" checked disabled onChange={() => undefined} />
+          </div>
         </div>
       </Section>
 

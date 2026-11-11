@@ -65,7 +65,7 @@ model School {
   /// IANA zone, e.g. Asia/Dushanbe; lesson times are shown in it.
   timezone             String
   defaultLocale        Locale       @default(ru) @map("default_locale")
-  /// TODO(T-13): relation to File once the files module exists.
+  /// TODO(T-34): relation to File once the files module exists.
   logoFileId           String?      @map("logo_file_id") @db.Uuid
   address              String?
   phone                String?

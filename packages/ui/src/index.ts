@@ -24,4 +24,5 @@ export {
   type StatusBadgeProps,
   type StatusTone,
 } from './components/StatusBadge';
+export { Switch, type SwitchProps } from './components/Switch';
 export { Chip, Tag, type ChipProps } from './components/Tag';

@@ -11,20 +11,8 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../lib/api';
 import { errorText } from '../../lib/error-text';
+import { TIMEZONES } from '../../lib/timezones';
 import { useCreateSchool } from './platform-api';
-
-/** Zones of the pilot markets: Tajikistan and its neighbours, then Russia west to east. */
-const TIMEZONES = [
-  'Asia/Dushanbe',
-  'Asia/Tashkent',
-  'Asia/Almaty',
-  'Europe/Moscow',
-  'Europe/Samara',
-  'Asia/Yekaterinburg',
-  'Asia/Novosibirsk',
-  'Asia/Krasnoyarsk',
-  'Asia/Vladivostok',
-];
 
 const FORM_ID = 'create-school-form';
 

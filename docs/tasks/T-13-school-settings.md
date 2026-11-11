@@ -52,7 +52,8 @@ reminderHoursBefore, debtRemindersEnabled, currencyLocked, joinUrl`.
 
 ## Веб
 
-- **`apps/web/src/app/school.ts`** — хук `useSchool()`: запрос `GET /school` с ключом `['school']`. Возвращает
+- **`apps/web/src/app/school.ts`** — хук `useSchool()`: запрос `GET /school` с ключом `['school', <id школы>]`
+  (исправлено при приёмке: с ключом без id открытая страница не перезапрашивает данные при смене школы). Возвращает
   `SchoolDto`. Его будут использовать расписание (часовой пояс) и деньги (валюта). Мутация настроек обновляет этот кэш.
 - **Страница `apps/web/src/pages/settings/SettingsPage.tsx`** вместо заглушки в `router.tsx`. Карточки (`Card`):
   1. **Профиль** — название, адрес, телефон, описание для родителей, часовой пояс, валюта, язык по умолчанию.

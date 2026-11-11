@@ -34,6 +34,12 @@ export async function mergeMembership(
   into: string,
 ): Promise<void> {
   await tx.inviteToken.updateMany({ where: { membershipId: from }, data: { membershipId: into } });
+  // A placeholder teacher may already lead groups (T-15, decision 6); the foreign key would
+  // otherwise refuse to delete it.
+  await tx.group.updateMany({
+    where: { teacherMembershipId: from },
+    data: { teacherMembershipId: into },
+  });
 }
 
 export interface IssueInviteParams {

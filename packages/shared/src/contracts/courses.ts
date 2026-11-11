@@ -19,14 +19,9 @@ const emptyToNull = (value: string): string | null => (value === '' ? null : val
 
 const ageSchema = z.number().int().min(AGE_MIN).max(AGE_MAX).nullable();
 
-function isHttpsUrl(value: string): boolean {
-  if (!value.startsWith('https://')) return false;
-  try {
-    return new URL(value).protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
+// The package has neither DOM nor Node types, so the link is checked without `URL`.
+const isHttpsUrl = (value: string): boolean =>
+  z.url({ protocol: /^https$/ }).safeParse(value).success;
 
 /** A calendar date without time, `YYYY-MM-DD`. */
 const clearableDate = z

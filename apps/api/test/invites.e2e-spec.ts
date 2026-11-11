@@ -220,6 +220,43 @@ describe.skipIf(!hasTestDb)('invites and joining by code (e2e)', () => {
       await accept(token, schoolA.admin).expect(200);
     });
 
+    it('moves the groups of a merged teacher placeholder to the kept membership', async () => {
+      const { schoolA } = fixture;
+      const { placeholder, token } = await placeholderInvite(schoolA.id, 'teacher');
+      const existing = await prisma.membership.findFirstOrThrow({
+        where: { schoolId: schoolA.id, userId: schoolA.teacher.userId, role: 'teacher' },
+      });
+      const asOwner = (path: string) =>
+        http()
+          .post(`/api/v1/${path}`)
+          .set('Authorization', schoolA.owner.auth)
+          .set('X-School-Id', schoolA.id);
+      const course = await asOwner('courses')
+        .send({
+          name: 'Курс слияния',
+          format: 'offline',
+          kind: 'group',
+          color: 'mint',
+          icon: 'bot',
+        })
+        .expect(201);
+      // The school set the group up before the teacher opened the link (T-15, decision 6).
+      const group = await asOwner('groups')
+        .send({
+          courseId: course.body.id,
+          name: 'Группа',
+          teacherMembershipId: placeholder.id,
+          capacity: 5,
+        })
+        .expect(201);
+
+      const res = await accept(token, schoolA.teacher).expect(200);
+      expect(res.body.membership.id).toBe(existing.id);
+      expect(await prisma.membership.findUnique({ where: { id: placeholder.id } })).toBeNull();
+      const stored = await prisma.group.findUniqueOrThrow({ where: { id: group.body.id } });
+      expect(stored.teacherMembershipId).toBe(existing.id);
+    });
+
     it('returns no panel address for teachers and parents', async () => {
       const teacher = await placeholderInvite(fixture.schoolB.id, 'teacher');
       const asTeacher = await accept(teacher.token, await newUser()).expect(200);

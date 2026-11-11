@@ -17,14 +17,37 @@ export function initData(): string {
   return webApp?.initData ?? '';
 }
 
+// Read once: the router drops the query string as soon as it navigates away from the first screen.
+const LAUNCH_QUERY = new URLSearchParams(window.location.search);
+
 /**
- * Launch payload (school code or invite, T-12): `start_param` for t.me/<bot>?startapp links,
+ * Launch payload (school code or invite): `start_param` for t.me/<bot>?startapp links,
  * `?start=` for the bot's /start button (see apps/api bot/start-reply.ts).
  */
 export function launchParam(): string | null {
-  return (
-    webApp?.initDataUnsafe.start_param ?? new URLSearchParams(window.location.search).get('start')
-  );
+  return webApp?.initDataUnsafe.start_param ?? LAUNCH_QUERY.get('start');
+}
+
+const DEFAULT_DEV_TELEGRAM_ID = 1_000_000_001;
+
+/**
+ * Telegram id for the browser dev mode (needs AUTH_DEV_BYPASS=true on the API).
+ * `?devUser=<id>` lets one browser play a second person in invite scenarios.
+ */
+export function devTelegramId(): number {
+  const requested = LAUNCH_QUERY.get('devUser');
+  return requested && /^[1-9]\d{0,14}$/.test(requested)
+    ? Number(requested)
+    : DEFAULT_DEV_TELEGRAM_ID;
+}
+
+/** Opens a page outside the Mini App: Telegram's in-app browser, or a new tab in dev mode. */
+export function openExternal(url: string): void {
+  if (webApp && isInsideTelegram()) {
+    webApp.openLink(url);
+  } else {
+    window.open(url, '_blank', 'noopener');
+  }
 }
 
 export function telegramLocale(): Locale {

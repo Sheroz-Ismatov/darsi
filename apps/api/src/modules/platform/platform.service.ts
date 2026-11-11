@@ -1,7 +1,6 @@
-import { randomBytes, randomInt } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { randomInt } from 'node:crypto';
+import { Injectable } from '@nestjs/common';
 import {
-  INVITE_START_PREFIX,
   OWNER_INVITE_TTL_HOURS,
   type CreatePlanRequest,
   type CreateSchoolRequest,
@@ -12,11 +11,9 @@ import {
   type UpdateSchoolRequest,
 } from '@darsi/shared';
 import { Prisma, type Plan } from '@prisma/client';
-import { ENV } from '../../common/config/config.module';
-import type { Env } from '../../common/config/env';
 import { AppError } from '../../common/errors/app-error';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { hashToken } from '../auth/token.service';
+import { InvitesService } from '../invites/invites.service';
 import { countStaff, STAFF_ROLES } from './plan-limits.service';
 
 const DEFAULT_BRANCH_NAME = 'Основной филиал';
@@ -99,8 +96,8 @@ function toSchoolDto(school: SchoolRow): PlatformSchoolDto {
 @Injectable()
 export class PlatformService {
   constructor(
-    @Inject(ENV) private readonly env: Env,
     private readonly prisma: PrismaService,
+    private readonly invites: InvitesService,
   ) {}
 
   async listPlans(): Promise<PlanDto[]> {
@@ -194,10 +191,7 @@ export class PlatformService {
     return this.schoolDto(id);
   }
 
-  /**
-   * One-time link for the school owner, valid for 72 hours (TZ FR-1).
-   * A new link replaces the previous one; accepting it is T-12.
-   */
+  /** One-time link for the school owner, valid for 72 hours (TZ FR-1); a new link replaces the previous one. */
   async issueOwnerInvite(schoolId: string, actorId: string): Promise<OwnerInviteResponse> {
     const school = await this.prisma.school.findUnique({
       where: { id: schoolId },
@@ -213,45 +207,19 @@ export class PlatformService {
       throw new AppError('OWNER_ALREADY_JOINED', 'The school already has an active owner', 409);
     }
 
-    const token = randomBytes(24).toString('base64url');
-    const expiresAt = new Date(Date.now() + OWNER_INVITE_TTL_HOURS * 60 * 60 * 1000);
-    await this.prisma.$transaction(async (tx) => {
-      // Schools created outside the platform API (seed) have no owner placeholder yet.
-      const membership =
-        school.memberships[0] ??
-        (await tx.membership.create({
-          data: { schoolId, role: 'owner', displayName: DEFAULT_OWNER_NAME },
-          select: { id: true },
-        }));
-      await tx.inviteToken.updateMany({
-        where: { membershipId: membership.id, usedAt: null, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
-      const invite = await tx.inviteToken.create({
-        data: {
-          schoolId,
-          membershipId: membership.id,
-          tokenHash: hashToken(token),
-          expiresAt,
-          createdByUserId: actorId,
-        },
-      });
-      await tx.auditLog.create({
-        data: {
-          schoolId,
-          actorUserId: actorId,
-          entity: 'InviteToken',
-          entityId: invite.id,
-          action: 'create',
-          after: { role: 'owner', expiresAt: expiresAt.toISOString() },
-        },
-      });
+    // Schools created outside the platform API (seed) have no owner placeholder yet.
+    const membership =
+      school.memberships[0] ??
+      (await this.prisma.membership.create({
+        data: { schoolId, role: 'owner', displayName: DEFAULT_OWNER_NAME },
+        select: { id: true },
+      }));
+    return this.invites.issue({
+      schoolId,
+      membershipId: membership.id,
+      ttlHours: OWNER_INVITE_TTL_HOURS,
+      actorId,
     });
-
-    return {
-      url: `https://t.me/${this.env.BOT_USERNAME}?start=${INVITE_START_PREFIX}${token}`,
-      expiresAt: expiresAt.toISOString(),
-    };
   }
 
   private async planDto(id: string): Promise<PlanDto> {

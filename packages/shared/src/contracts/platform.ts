@@ -24,10 +24,6 @@ export const schoolCodeSchema = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]{2,31}$/, 'Use 3–32 lowercase latin letters, digits or hyphens');
 
-/** Prefix of the bot start payload that carries an invite token (accepted in T-12). */
-export const INVITE_START_PREFIX = 'inv_';
-export const OWNER_INVITE_TTL_HOURS = 72;
-
 const planFields = {
   name: z.string().trim().min(1).max(64),
   maxStudents: z.number().int().min(1).max(100_000),

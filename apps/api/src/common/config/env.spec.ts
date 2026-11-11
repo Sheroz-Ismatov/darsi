@@ -43,6 +43,14 @@ describe('parseEnv', () => {
     );
   });
 
+  it('treats an empty WEB_URL as unset and accepts plain http for local development', () => {
+    expect(parseEnv({ ...valid, WEB_URL: '' }).WEB_URL).toBeUndefined();
+    expect(parseEnv({ ...valid, WEB_URL: 'http://localhost:5173' }).WEB_URL).toBe(
+      'http://localhost:5173',
+    );
+    expect(() => parseEnv({ ...valid, WEB_URL: 'panel' })).toThrow(/WEB_URL/);
+  });
+
   it('allows the auth dev bypass in development', () => {
     expect(parseEnv({ ...valid, AUTH_DEV_BYPASS: 'true' }).AUTH_DEV_BYPASS).toBe(true);
   });

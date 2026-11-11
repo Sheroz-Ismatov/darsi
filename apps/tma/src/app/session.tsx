@@ -1,11 +1,10 @@
 import type { MeResponse, TmaAuthResponse } from '@darsi/shared';
-import { useQuery } from '@tanstack/react-query';
-import { createContext, useContext, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContext, useCallback, useContext, type ReactNode } from 'react';
 import { apiFetch, setAccessToken } from './api';
-import { DEV_OUTSIDE_TELEGRAM, initData, isInsideTelegram } from './telegram';
+import { DEV_OUTSIDE_TELEGRAM, devTelegramId, initData, isInsideTelegram } from './telegram';
 
-/** Fixed Telegram id for the browser dev mode (needs AUTH_DEV_BYPASS=true on the API). */
-const DEV_TELEGRAM_ID = 1_000_000_001;
+const SESSION_KEY = ['session'] as const;
 
 async function signIn(): Promise<MeResponse> {
   if (isInsideTelegram()) {
@@ -17,7 +16,7 @@ async function signIn(): Promise<MeResponse> {
   } else if (DEV_OUTSIDE_TELEGRAM) {
     const auth = await apiFetch<{ accessToken: string }>('/auth/dev-login', {
       method: 'POST',
-      body: JSON.stringify({ telegramId: DEV_TELEGRAM_ID, firstName: 'Dev' }),
+      body: JSON.stringify({ telegramId: devTelegramId(), firstName: 'Dev' }),
     });
     setAccessToken(auth.accessToken);
   }
@@ -38,7 +37,7 @@ export function SessionProvider({
   fallback: (state: 'loading' | 'error', retry: () => void) => ReactNode;
 }) {
   const session = useQuery({
-    queryKey: ['session'],
+    queryKey: SESSION_KEY,
     queryFn: signIn,
     staleTime: Infinity,
     retry: 1,
@@ -55,4 +54,18 @@ export function useSession(): MeResponse {
     throw new Error('useSession must be used inside SessionProvider');
   }
   return session;
+}
+
+/** Reloads the profile after the user's memberships changed, without signing in again. */
+export function useRefreshSession(): () => Promise<void> {
+  const queryClient = useQueryClient();
+  return useCallback(async () => {
+    queryClient.setQueryData(SESSION_KEY, await apiFetch<MeResponse>('/me'));
+  }, [queryClient]);
+}
+
+/** Start screen by role until the role switcher of T-36: teachers see their schedule first. */
+export function homePath(me: MeResponse): string {
+  const isTeacher = me.memberships.some((m) => m.role === 'teacher' && m.status === 'active');
+  return isTeacher ? '/teacher' : '/parent';
 }

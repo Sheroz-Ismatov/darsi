@@ -6,6 +6,7 @@ import { RedisModule } from './common/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BotModule } from './modules/bot/bot.module';
 import { HealthModule } from './modules/health/health.module';
+import { InvitesModule } from './modules/invites/invites.module';
 import { PlatformModule } from './modules/platform/platform.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { PlatformModule } from './modules/platform/platform.module';
     AuthModule,
     BotModule,
     HealthModule,
+    InvitesModule,
     PlatformModule,
   ],
 })

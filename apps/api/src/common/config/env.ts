@@ -31,6 +31,8 @@ const envSchema = z
         )
         .optional(),
     ),
+    /** Admin panel address; the Mini App links owners and admins to it after an invite. `WEB_URL=` counts as unset. */
+    WEB_URL: z.preprocess((value) => (value === '' ? undefined : value), z.url().optional()),
     AUTH_DEV_BYPASS: z
       .enum(['true', 'false'])
       .default('false')

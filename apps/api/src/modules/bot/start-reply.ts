@@ -1,7 +1,10 @@
-import { DEFAULT_LOCALE, I18N_RESOURCES, LOCALES, type Locale } from '@darsi/shared';
-
-/** `/start` payload: school code or invite token (T-12). Anything else is ignored. */
-const PAYLOAD = /^[\w-]{1,64}$/;
+import {
+  DEFAULT_LOCALE,
+  I18N_RESOURCES,
+  LOCALES,
+  parseStartPayload,
+  type Locale,
+} from '@darsi/shared';
 
 export interface StartReply {
   text: string;
@@ -14,8 +17,8 @@ export function botLocale(languageCode: string | undefined): Locale {
 }
 
 /**
- * Reply to `/start [payload]`. The payload travels to the Mini App as `?start=` because
- * `start_param` in initData is filled only for t.me/<bot>?startapp links, not for buttons.
+ * Reply to `/start [payload]`. The payload (school code or invite) travels to the Mini App as
+ * `?start=` because `start_param` in initData is filled only for t.me/<bot>?startapp links.
  */
 export function buildStartReply(
   payload: string | undefined,
@@ -27,8 +30,12 @@ export function buildStartReply(
     return { text: texts.unavailable };
   }
   const url = new URL(tmaUrl);
-  if (payload && PAYLOAD.test(payload)) {
+  const start = parseStartPayload(payload);
+  if (start && payload) {
     url.searchParams.set('start', payload);
   }
-  return { text: texts.welcome, button: { text: texts.openApp, url: url.toString() } };
+  return {
+    text: start?.kind === 'invite' ? texts.inviteWelcome : texts.welcome,
+    button: { text: texts.openApp, url: url.toString() },
+  };
 }

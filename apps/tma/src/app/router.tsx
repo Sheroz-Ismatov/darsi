@@ -1,6 +1,8 @@
 import { CalendarDays, CreditCard, House, BookOpen, UserRound, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createBrowserRouter } from 'react-router';
+import { InviteScreen } from '../pages/onboarding/InviteScreen';
+import { StartScreen } from '../pages/onboarding/StartScreen';
 import { ParentHomeScreen } from '../pages/parent/ParentHomeScreen';
 import { PlaceholderScreen } from '../pages/PlaceholderScreen';
 import { TmaLayout } from './layout/TmaLayout';
@@ -33,9 +35,10 @@ function TeacherLayout() {
   );
 }
 
-// TODO(T-23, T-31…T-36): real screens; TODO(T-07): pick the start screen by the user's role.
+// TODO(T-23, T-31…T-36): real screens in place of the placeholders.
 export const router = createBrowserRouter([
-  { path: '/', element: <Navigate to="/parent" replace /> },
+  { path: '/', element: <StartScreen /> },
+  { path: '/invite', element: <InviteScreen /> },
   {
     path: '/parent',
     element: <ParentLayout />,

@@ -60,6 +60,17 @@ interface Row {
 
 type RowError = 'weekday' | 'startTime' | 'duplicate' | 'durationMin';
 
+/**
+ * Turns what people actually type ("9", "930", "9:30", "16.00") into HH:mm.
+ * Anything else is left as is so the schema reports it.
+ */
+const normalizeTime = (value: string): string => {
+  const match = /^(\d{1,2})(?:[:.]?(\d{2}))?$/.exec(value.trim());
+  if (!match) return value;
+  const [, hours = '', minutes = '00'] = match;
+  return `${hours.padStart(2, '0')}:${minutes}`;
+};
+
 let nextKey = 0;
 
 const toRow = (rule?: ScheduleRuleDto): Row => {
@@ -76,7 +87,7 @@ const toRow = (rule?: ScheduleRuleDto): Row => {
 const toRequest = (rows: Row[]) => ({
   rules: rows.map((row) => ({
     weekday: row.weekday ?? 0,
-    startTime: row.startTime,
+    startTime: normalizeTime(row.startTime),
     durationMin: Number(row.duration === CUSTOM ? row.customDuration : row.duration),
   })),
 });
@@ -159,40 +170,53 @@ function RulesEditor({
                     </Chip>
                   ))}
                 </div>
-                <Input
-                  type="time"
-                  aria-label={t('schedule.fieldTime')}
-                  className="w-[120px] py-2.5"
-                  value={row.startTime}
-                  aria-invalid={error === 'startTime' || error === 'duplicate'}
-                  onChange={(event) => update(row.key, { startTime: event.target.value })}
-                />
-                <Select
-                  aria-label={t('schedule.fieldDuration')}
-                  className="w-[150px] py-2.5"
-                  value={row.duration}
-                  onChange={(event) => update(row.key, { duration: event.target.value })}
-                >
-                  {DURATIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {t('schedule.minutes', { n: value })}
-                    </option>
-                  ))}
-                  <option value={CUSTOM}>{t('schedule.customDuration')}</option>
-                </Select>
-                {row.duration === CUSTOM && (
+                {/* Plain text field: <input type="time"> follows the OS locale and may show AM/PM. */}
+                <div className="w-[100px]">
                   <Input
-                    type="number"
+                    type="text"
                     inputMode="numeric"
-                    min={15}
-                    max={480}
-                    aria-label={t('schedule.fieldCustomDuration')}
-                    placeholder={t('schedule.minutesPlaceholder')}
-                    className="w-[110px] py-2.5"
-                    value={row.customDuration}
-                    aria-invalid={error === 'durationMin'}
-                    onChange={(event) => update(row.key, { customDuration: event.target.value })}
+                    maxLength={5}
+                    placeholder="15:00"
+                    aria-label={t('schedule.fieldTime')}
+                    className="py-2.5 font-mono"
+                    value={row.startTime}
+                    aria-invalid={error === 'startTime' || error === 'duplicate'}
+                    onChange={(event) =>
+                      update(row.key, { startTime: event.target.value.replace(/[^\d:.]/g, '') })
+                    }
+                    onBlur={() => update(row.key, { startTime: normalizeTime(row.startTime) })}
                   />
+                </div>
+                <div className="w-[150px]">
+                  <Select
+                    aria-label={t('schedule.fieldDuration')}
+                    className="py-2.5"
+                    value={row.duration}
+                    onChange={(event) => update(row.key, { duration: event.target.value })}
+                  >
+                    {DURATIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {t('schedule.minutes', { n: value })}
+                      </option>
+                    ))}
+                    <option value={CUSTOM}>{t('schedule.customDuration')}</option>
+                  </Select>
+                </div>
+                {row.duration === CUSTOM && (
+                  <div className="w-[110px]">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={15}
+                      max={480}
+                      aria-label={t('schedule.fieldCustomDuration')}
+                      placeholder={t('schedule.minutesPlaceholder')}
+                      className="py-2.5"
+                      value={row.customDuration}
+                      aria-invalid={error === 'durationMin'}
+                      onChange={(event) => update(row.key, { customDuration: event.target.value })}
+                    />
+                  </div>
                 )}
                 <Button
                   variant="ghost"

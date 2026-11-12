@@ -16,6 +16,8 @@ describe('parseEnv', () => {
     expect(env.API_PORT).toBe(3000);
     expect(env.CORS_ORIGINS).toEqual(['http://a.test', 'http://b.test']);
     expect(env.AUTH_DEV_BYPASS).toBe(false);
+    expect(env.JOBS_ENABLED).toBe(true);
+    expect(parseEnv({ ...valid, JOBS_ENABLED: 'false' }).JOBS_ENABLED).toBe(false);
   });
 
   it('lists every invalid variable in one error', () => {

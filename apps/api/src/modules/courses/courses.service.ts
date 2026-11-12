@@ -10,6 +10,7 @@ import type {
 import type { Prisma } from '@prisma/client';
 import { AppError } from '../../common/errors/app-error';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { ScheduleService } from '../lessons/schedule.service';
 import { courseNotFound, GroupsService } from './groups.service';
 import { snapshotDiff } from './snapshot-diff';
 
@@ -52,6 +53,7 @@ export class CoursesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly groups: GroupsService,
+    private readonly schedule: ScheduleService,
   ) {}
 
   async list(schoolId: string, query: ListCoursesQuery): Promise<CourseDto[]> {
@@ -154,6 +156,10 @@ export class CoursesService {
       );
       return updated;
     });
+    // Lessons of an archived course stop being generated, like those of an archived group.
+    for (const group of after.groups) {
+      await this.schedule.syncGroup(group.id);
+    }
     return this.present(after);
   }
 

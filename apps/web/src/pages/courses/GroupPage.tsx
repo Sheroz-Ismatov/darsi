@@ -8,6 +8,7 @@ import { CourseIcon } from '../../features/courses/CourseIcon';
 import { FORMAT_LABEL, KIND_LABEL } from '../../features/courses/course-labels';
 import { useArchiveGroup, useGroup } from '../../features/courses/courses-api';
 import { GroupDialog } from '../../features/courses/GroupDialog';
+import { ScheduleTab } from '../../features/lessons/ScheduleTab';
 import { errorText } from '../../lib/error-text';
 import { formatDay } from '../../lib/format';
 
@@ -171,8 +172,7 @@ export function GroupPage() {
         // TODO(T-18): the group's students and "Add student".
         <EmptyState title={t('groups.studentsEmpty')} text={t('groups.studentsEmptyText')} />
       ) : (
-        // TODO(T-16): schedule rules and upcoming lessons of the group.
-        <EmptyState title={t('groups.scheduleEmpty')} text={t('groups.scheduleEmptyText')} />
+        <ScheduleTab group={g} />
       )}
 
       {editing && <GroupDialog course={course} group={g} onClose={() => setEditing(false)} />}

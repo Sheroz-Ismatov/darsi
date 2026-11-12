@@ -16,6 +16,8 @@ export function applyTestEnv(overrides: Record<string, string> = {}): void {
     // Never poll Telegram from tests, even if the developer's .env enables it.
     BOT_MODE: 'off',
     AUTH_DEV_BYPASS: 'false',
+    // Suites call the jobs directly with a fixed clock.
+    JOBS_ENABLED: 'false',
     WEB_URL: 'http://localhost:5173',
     ...overrides,
   });

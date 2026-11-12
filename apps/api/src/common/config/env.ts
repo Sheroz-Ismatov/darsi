@@ -33,6 +33,11 @@ const envSchema = z
     ),
     /** Admin panel address; the Mini App links owners and admins to it after an invite. `WEB_URL=` counts as unset. */
     WEB_URL: z.preprocess((value) => (value === '' ? undefined : value), z.url().optional()),
+    /** Scheduled jobs inside the API process (lesson horizon). Off in tests. */
+    JOBS_ENABLED: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((value) => value === 'true'),
     AUTH_DEV_BYPASS: z
       .enum(['true', 'false'])
       .default('false')

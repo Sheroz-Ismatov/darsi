@@ -30,7 +30,7 @@
 
 **T-03 ✅ Каркас API**
 - Цель: NestJS с конфигом, логами, ошибками, health.
-- Файлы: `apps/api/src/{main.ts,app.module.ts,app.setup.ts}`, `src/common/{config,logger,errors,prisma,redis}`, `src/modules/health`, `vitest.config.mts`. Точка входа `worker.ts` появится вместе с первой фоновой задачей (T-16).
+- Файлы: `apps/api/src/{main.ts,app.module.ts,app.setup.ts}`, `src/common/{config,logger,errors,prisma,redis}`, `src/modules/health`, `vitest.config.mts`. Точка входа `worker.ts` появится вместе с очередями (T-38); до этого ежедневная задача T-16 работает внутри API через `@nestjs/schedule`.
 - Готово: env валидируется zod (падение при старте с понятной ошибкой); единый формат ошибок; `GET /api/v1/health` возвращает статус БД и Redis; первый тест зелёный.
 - Проверка: `pnpm --filter api dev`, `curl localhost:3000/api/v1/health`, `pnpm --filter api test`.
 - Зависит: T-02
@@ -124,10 +124,12 @@
 - Замечание: `cn()` в `@darsi/ui` не сливает классы Tailwind, поэтому `className="p-0"` у `Card` не перебивает `p-5` — блок курса сделан без `Card`. Тот же приём в `StaffPage` (`Card className="… p-0"`), видимо, работает не так, как задумано.
 - Зависит: T-14
 
-**T-16 ⬜ Расписание и генерация занятий** — FR-13, FR-14.
-- Файлы: `shared/domain/schedule.ts` (`generateLessons`), `modules/lessons`, job `lessons.extend-horizon`.
-- Готово: генерация на 8 недель; перегенерация будущих занятий без отметок; предупреждение о конфликтах; тесты для `Asia/Dushanbe` и `Europe/Moscow`.
-- Проверка: юнит-тесты домена (100%), e2e.
+**T-16 ✅ Расписание и генерация занятий** — FR-13, FR-14, вкладка «Расписание» экрана W-5. Бриф: [docs/tasks/T-16-schedule.md](docs/tasks/T-16-schedule.md).
+- Файлы: домен `packages/shared/src/domain/{time,schedule}.ts` (`zonedDateTimeToUtc`, `utcToZoned`, `addDays`, `daysBetween`, `weekdayOf`, `todayIn`, `planLessons`, `diffLessons`, `findConflicts`) с Vitest и порогом покрытия 100% (`packages/shared/vitest.config.ts`, скрипт `test`); `contracts/lessons.ts`; схема `ScheduleRule`, `Lesson`, enum `LessonStatus`, миграция `20261112090000_schedule` (плюс CHECK на день недели, время, длительность); `modules/lessons` (`GroupScheduleController`, `LessonsController`, `ScheduleService`, `LessonsService`, `HorizonJob`); `JOBS_ENABLED` в `env.ts` и `.env.example`; веб `features/lessons/{ScheduleTab.tsx,schedule-api.ts}`, `lib/dates.ts`.
+- Сделано: `GET/PUT /groups/:id/schedule-rules`, `GET /groups/:id/conflicts`, `GET /lessons?from&to&groupId` (до 62 дней, даты в поясе школы). Сохранение правил — одна транзакция: совпавшие правила остаются теми же строками, отменённые закрываются `validTo` = вчера и удаляются, если на них больше не ссылается ни одно занятие; затем `syncGroup` (горизонт сегодня…+56 дней, `planLessons` → `diffLessons` → удаление и `createMany skipDuplicates`). Отменённые, перенесённые, прошедшие, разовые и (с T-22) отмеченные занятия не удаляются; занятый слот не заполняется заново. Накладки — предупреждение (до 20). Аудит `Group / schedule_update`. Ежедневно в 02:00 UTC `extendHorizon` (только группы с правилами в активных школах; ошибка одной группы — в лог). Синхронизация также после смены дат группы, архива и возврата группы, архива и возврата курса, смены часового пояса школы; смена преподавателя переносит будущие занятия по правилам на нового. `hasAttendance` пока `false` (`TODO(T-22)`).
+- Веб: вкладка «Расписание» — строки «день (чипы Пн…Вс) · время · длительность 30/45/60/90/120 или своё», «Добавить занятие в неделю», удаление строки, ошибки по строкам; итог «Создано занятий: N, удалено: M»; жёлтый блок накладок; «Ближайшие занятия» (10 строк) со статусом. Всё время — в поясе школы через `lib/dates.ts`. Мутации курсов, групп и настроек школы сбрасывают кэш занятий.
+- Проверено в браузере: правила «пн и чт 15:00» → 17 занятий, 10:00 UTC; смена понедельника на 16:00 → 8 создано, 8 удалено, четверги не тронуты; вторая группа того же преподавателя в чт 15:30 → предупреждение о 9 накладках; смена пояса школы на `Europe/Moscow` → правило 15:30 прежнее, занятия переехали на 12:30 UTC и показаны как 15:30 при браузере в `Asia/Dushanbe`; пояс возвращён. Ошибка «Выберите день недели» и пустые состояния.
+- Перенесено: ничего. Замечание: на медленной базе транзакция создания группы из T-15 (стандартные 5 с Prisma) однажды не уложилась и дала 500 — стоит поднять таймаут интерактивных транзакций в общем месте.
 - Зависит: T-15
 
 **T-17 ⬜ Календарь, отмена, перенос, разовые занятия** — FR-15, FR-16, экран W-3.

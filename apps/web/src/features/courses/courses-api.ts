@@ -62,6 +62,8 @@ function useCatalogMutation<Input, Output>(mutationFn: (input: Input) => Promise
       Promise.all([
         queryClient.invalidateQueries({ queryKey: coursesKey(schoolId) }),
         queryClient.invalidateQueries({ queryKey: groupsKey(schoolId) }),
+        // Archiving and new group dates regenerate lessons on the server.
+        queryClient.invalidateQueries({ queryKey: ['lessons', schoolId] }),
       ]),
   });
 }

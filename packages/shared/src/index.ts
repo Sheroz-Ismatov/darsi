@@ -4,5 +4,7 @@ export * from './contracts/courses';
 export * from './contracts/invites';
 export * from './contracts/platform';
 export * from './contracts/school';
+export * from './contracts/lessons';
 export * from './contracts/staff';
+export * from './domain';
 export * from './i18n';

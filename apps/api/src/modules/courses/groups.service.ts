@@ -9,6 +9,7 @@ import type {
 import type { Prisma } from '@prisma/client';
 import { AppError } from '../../common/errors/app-error';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { ScheduleService } from '../lessons/schedule.service';
 import { fromDateString, snapshotDiff, toDateString } from './snapshot-diff';
 
 export const courseNotFound = () => new AppError('COURSE_NOT_FOUND', 'Course not found', 404);
@@ -56,7 +57,10 @@ const byActiveThenName = (a: GroupDto, b: GroupDto): number =>
 /** Groups of the school's courses (TZ FR-12). Groups are never deleted, only archived. */
 @Injectable()
 export class GroupsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly schedule: ScheduleService,
+  ) {}
 
   /**
    * Students taking a seat in each group.
@@ -166,6 +170,12 @@ export class GroupsService {
       await this.audit(tx, schoolId, actorId, id, 'update', diff.before, diff.after);
       return updated;
     });
+    if (diff.fields.includes('teacherMembershipId')) {
+      await this.schedule.reassignTeacher(id, next.teacherMembershipId);
+    }
+    if (diff.fields.includes('startsOn') || diff.fields.includes('endsOn')) {
+      await this.schedule.syncGroup(id);
+    }
     return this.present(after);
   }
 
@@ -196,6 +206,8 @@ export class GroupsService {
       );
       return updated;
     });
+    // Archiving drops the future generated lessons; restoring brings them back.
+    await this.schedule.syncGroup(id);
     return this.present(after);
   }
 

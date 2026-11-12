@@ -5,6 +5,7 @@ import { ENV } from '../../common/config/config.module';
 import type { Env } from '../../common/config/env';
 import { AppError } from '../../common/errors/app-error';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { ScheduleService } from '../lessons/schedule.service';
 
 const settingsSelect = {
   id: true,
@@ -33,6 +34,7 @@ export class SchoolsService {
   constructor(
     @Inject(ENV) private readonly env: Env,
     private readonly prisma: PrismaService,
+    private readonly schedule: ScheduleService,
   ) {}
 
   async get(schoolId: string): Promise<SchoolDto> {
@@ -96,6 +98,7 @@ export class SchoolsService {
         },
       }),
     ]);
+    if (changed.timezone !== undefined) await this.schedule.syncSchool(schoolId);
     return this.toDto(after, locked);
   }
 

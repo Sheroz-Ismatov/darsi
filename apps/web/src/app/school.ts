@@ -26,6 +26,10 @@ export function useUpdateSchoolSettings() {
   return useMutation({
     mutationFn: (data: UpdateSchoolSettingsRequest) =>
       apiFetch<SchoolDto>('/school', { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: (school) => queryClient.setQueryData(schoolKey(school.id), school),
+    onSuccess: (school) => {
+      queryClient.setQueryData(schoolKey(school.id), school);
+      // A new time zone moves every generated lesson on the server.
+      return queryClient.invalidateQueries({ queryKey: ['lessons', school.id] });
+    },
   });
 }

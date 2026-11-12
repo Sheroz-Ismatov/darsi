@@ -10,6 +10,7 @@ import {
   Chip,
   DarkCard,
   DateBlock,
+  Drawer,
   EmptyState,
   Eyebrow,
   Field,
@@ -115,6 +116,7 @@ export function UiShowcasePage() {
   const [chip, setChip] = useState('all');
   const [charge, setCharge] = useState(true);
   const [excused, setExcused] = useState(false);
+  const [drawer, setDrawer] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
@@ -352,6 +354,41 @@ export function UiShowcasePage() {
             <StatusBadge tone="info">Скоро</StatusBadge>
           </Card>
         </div>
+      </Section>
+
+      <Section title="Боковая панель (Drawer)">
+        <Button variant="ghost" onClick={() => setDrawer(true)}>
+          Открыть карточку занятия
+        </Button>
+        <Drawer
+          open={drawer}
+          onClose={() => setDrawer(false)}
+          eyebrow="Английский"
+          title="Группа A1"
+          closeLabel="Закрыть"
+          footer={
+            <>
+              <Button size="sm">Перенести</Button>
+              <Button variant="ghost" size="sm">
+                Отменить
+              </Button>
+            </>
+          }
+        >
+          <div className="flex flex-col gap-3 text-sm">
+            <div>
+              <div className="text-muted">Когда</div>
+              <div className="font-semibold">чт, 14 мая · 17:30–18:30</div>
+            </div>
+            <div>
+              <div className="text-muted">Преподаватель</div>
+              <div className="font-semibold">Мадина Р.</div>
+            </div>
+            <StatusBadge tone="info" className="self-start">
+              Запланировано
+            </StatusBadge>
+          </div>
+        </Drawer>
       </Section>
 
       <Section title="Тёмная карточка и пустое состояние">

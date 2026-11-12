@@ -114,18 +114,21 @@ export interface CourseDto {
 
 // ---------- Groups (TZ FR-12) ----------
 
+/** A video call link of a group or a lesson; an empty string clears it. */
+export const meetingUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((value) => value === '' || isHttpsUrl(value), 'Use an https:// link')
+  .transform(emptyToNull)
+  .nullable();
+
 const groupFields = {
   name: z.string().trim().min(1).max(120),
   teacherMembershipId: z.uuid(),
   /** Ignored for an individual course: its groups always hold one student. */
   capacity: z.number().int().min(1).max(GROUP_CAPACITY_MAX),
-  meetingUrl: z
-    .string()
-    .trim()
-    .max(500)
-    .refine((value) => value === '' || isHttpsUrl(value), 'Use an https:// link')
-    .transform(emptyToNull)
-    .nullable(),
+  meetingUrl: meetingUrlSchema,
   startsOn: clearableDate,
   endsOn: clearableDate,
 };

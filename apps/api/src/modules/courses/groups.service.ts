@@ -10,6 +10,7 @@ import type { Prisma } from '@prisma/client';
 import { AppError } from '../../common/errors/app-error';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ScheduleService } from '../lessons/schedule.service';
+import { assertTeacher, countEnrolled } from './group-checks';
 import { fromDateString, snapshotDiff, toDateString } from './snapshot-diff';
 
 export const courseNotFound = () => new AppError('COURSE_NOT_FOUND', 'Course not found', 404);
@@ -62,12 +63,8 @@ export class GroupsService {
     private readonly schedule: ScheduleService,
   ) {}
 
-  /**
-   * Students taking a seat in each group.
-   * TODO(T-18): count active enrollments once they exist; until then every group is empty.
-   */
   countEnrolled(groupIds: string[]): Promise<Map<string, number>> {
-    return Promise.resolve(new Map(groupIds.map((id) => [id, 0])));
+    return countEnrolled(this.prisma, groupIds);
   }
 
   async list(schoolId: string, query: ListGroupsQuery): Promise<GroupDto[]> {
@@ -171,7 +168,11 @@ export class GroupsService {
       return updated;
     });
     if (diff.fields.includes('teacherMembershipId')) {
-      await this.schedule.reassignTeacher(id, next.teacherMembershipId);
+      await this.schedule.reassignTeacher(
+        id,
+        current.teacherMembershipId,
+        next.teacherMembershipId,
+      );
     }
     if (diff.fields.includes('startsOn') || diff.fields.includes('endsOn')) {
       await this.schedule.syncGroup(id);
@@ -211,18 +212,8 @@ export class GroupsService {
     return this.present(after);
   }
 
-  /** Teachers are set up before they join, so an invited membership counts (T-15, decision 6). */
-  private async assertTeacher(schoolId: string, membershipId: string): Promise<void> {
-    const teacher = await this.prisma.membership.findFirst({
-      where: {
-        id: membershipId,
-        schoolId,
-        role: 'teacher',
-        status: { in: ['active', 'invited'] },
-      },
-      select: { id: true },
-    });
-    if (!teacher) throw new AppError('TEACHER_NOT_FOUND', 'Teacher not found', 422);
+  private assertTeacher(schoolId: string, membershipId: string): Promise<void> {
+    return assertTeacher(this.prisma, schoolId, membershipId);
   }
 
   private async find(schoolId: string, id: string): Promise<GroupRow> {

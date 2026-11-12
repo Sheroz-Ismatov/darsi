@@ -12,6 +12,7 @@ export {
 } from './components/Card';
 export { DateBlock, type DateBlockProps } from './components/DateBlock';
 export { Dialog, type DialogProps } from './components/Dialog';
+export { Drawer, type DrawerProps } from './components/Drawer';
 export { EmptyState, type EmptyStateProps } from './components/EmptyState';
 export { Eyebrow } from './components/Eyebrow';
 export { Field, Input, Select, Textarea, type FieldProps } from './components/Form';

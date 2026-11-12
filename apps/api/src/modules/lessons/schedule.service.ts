@@ -226,11 +226,20 @@ export class ScheduleService {
     return total;
   }
 
-  /** After the group's teacher changes, future generated lessons go to the new one. */
-  async reassignTeacher(groupId: string, teacherMembershipId: string, now = new Date()) {
+  /**
+   * After the group's teacher changes, future generated lessons go to the new one. A lesson
+   * given to a substitute (T-17) keeps the substitute.
+   */
+  async reassignTeacher(
+    groupId: string,
+    previousTeacherId: string,
+    teacherMembershipId: string,
+    now = new Date(),
+  ) {
     await this.prisma.lesson.updateMany({
       where: {
         groupId,
+        teacherMembershipId: previousTeacherId,
         scheduleRuleId: { not: null },
         status: 'planned',
         startsAt: { gt: now },

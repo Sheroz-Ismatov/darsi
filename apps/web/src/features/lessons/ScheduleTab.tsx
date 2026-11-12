@@ -5,7 +5,6 @@ import {
   SCHEDULE_RULES_MAX,
   todayIn,
   type GroupDto,
-  type LessonConflictDto,
   type LessonStatus,
   type PutScheduleRulesResponse,
   type ScheduleRuleDto,
@@ -21,12 +20,14 @@ import {
   StatusBadge,
   type StatusTone,
 } from '@darsi/ui';
-import { Plus, TriangleAlert, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSchool } from '../../app/school';
-import { formatLessonDay, formatLessonRange, formatLessonTime } from '../../lib/dates';
+import { formatLessonDay, formatLessonRange } from '../../lib/dates';
 import { errorText } from '../../lib/error-text';
+import { ConflictsNote } from './ConflictsNote';
+import { normalizeTime, timeChars } from './lesson-time';
 import { useLessons, useSaveScheduleRules, useScheduleRules } from './schedule-api';
 
 /** ISO weekday numbers with their dictionary keys. */
@@ -59,17 +60,6 @@ interface Row {
 }
 
 type RowError = 'weekday' | 'startTime' | 'duplicate' | 'durationMin';
-
-/**
- * Turns what people actually type ("9", "930", "9:30", "16.00") into HH:mm.
- * Anything else is left as is so the schema reports it.
- */
-const normalizeTime = (value: string): string => {
-  const match = /^(\d{1,2})(?:[:.]?(\d{2}))?$/.exec(value.trim());
-  if (!match) return value;
-  const [, hours = '', minutes = '00'] = match;
-  return `${hours.padStart(2, '0')}:${minutes}`;
-};
 
 let nextKey = 0;
 
@@ -182,7 +172,7 @@ function RulesEditor({
                     value={row.startTime}
                     aria-invalid={error === 'startTime' || error === 'duplicate'}
                     onChange={(event) =>
-                      update(row.key, { startTime: event.target.value.replace(/[^\d:.]/g, '') })
+                      update(row.key, { startTime: timeChars(event.target.value) })
                     }
                     onBlur={() => update(row.key, { startTime: normalizeTime(row.startTime) })}
                   />
@@ -258,30 +248,6 @@ function RulesEditor({
         </div>
       )}
     </form>
-  );
-}
-
-function Conflicts({ items, timeZone }: { items: LessonConflictDto[]; timeZone: string }) {
-  const { t } = useTranslation();
-  return (
-    <div role="status" className="mt-4 rounded-md bg-warn-bg p-4 text-warn">
-      <div className="mb-2 flex items-center gap-2 font-semibold">
-        <TriangleAlert size={16} aria-hidden />
-        {t('schedule.conflictsTitle')}
-      </div>
-      <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-sm">
-        {items.map((item) => (
-          <li key={`${item.startsAt}|${item.otherStartsAt}`}>
-            {t('schedule.conflictLine', {
-              day: formatLessonDay(item.startsAt, timeZone),
-              time: formatLessonTime(item.startsAt, timeZone),
-              group: item.otherGroupName,
-              range: formatLessonRange(item.otherStartsAt, item.otherDurationMin, timeZone),
-            })}
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
 
@@ -361,7 +327,11 @@ export function ScheduleTab({ group }: { group: GroupDto }) {
           </div>
         )}
         {result && result.conflicts.length > 0 && (
-          <Conflicts items={result.conflicts} timeZone={timezone} />
+          <ConflictsNote
+            title={t('schedule.conflictsTitle')}
+            items={result.conflicts}
+            timeZone={timezone}
+          />
         )}
       </Card>
       <Card>

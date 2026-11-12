@@ -33,3 +33,40 @@ export function formatLessonRange(iso: string, durationMin: number, timeZone: st
   const end = new Date(Date.parse(iso) + durationMin * 60_000).toISOString();
   return `${formatLessonTime(iso, timeZone)}–${formatLessonTime(end, timeZone)}`;
 }
+
+/** «14 мая, 15:00». */
+export function formatLessonMoment(iso: string, timeZone: string): string {
+  return formatter(timeZone, {
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(iso));
+}
+
+// Calendar dates `YYYY-MM-DD` are already in the school's zone: they are read as UTC midnight
+// so that no zone shifts them.
+const calendarDate = (date: string): Date => new Date(`${date}T00:00:00Z`);
+
+/** «пн» — the short weekday of a calendar date. */
+export function formatWeekdayShort(date: string): string {
+  return formatter('UTC', { weekday: 'short' }).format(calendarDate(date));
+}
+
+/** «четверг, 14 мая». */
+export function formatDayLong(date: string): string {
+  return formatter('UTC', { weekday: 'long', day: 'numeric', month: 'long' }).format(
+    calendarDate(date),
+  );
+}
+
+/** «12–18 мая», «28 апреля – 4 мая», «29 декабря 2026 г. – 4 января 2027 г.». */
+export function formatPeriod(from: string, to: string): string {
+  const sameYear = from.slice(0, 4) === to.slice(0, 4);
+  return formatter('UTC', {
+    day: 'numeric',
+    month: 'long',
+    ...(!sameYear && { year: 'numeric' }),
+  }).formatRange(calendarDate(from), calendarDate(to));
+}

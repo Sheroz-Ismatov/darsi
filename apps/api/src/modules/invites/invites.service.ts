@@ -40,6 +40,11 @@ export async function mergeMembership(
     where: { teacherMembershipId: from },
     data: { teacherMembershipId: into },
   });
+  // Lessons generated for those groups point at the placeholder too (T-16).
+  await tx.lesson.updateMany({
+    where: { teacherMembershipId: from },
+    data: { teacherMembershipId: into },
+  });
 }
 
 export interface IssueInviteParams {

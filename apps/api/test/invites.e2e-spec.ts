@@ -249,12 +249,24 @@ describe.skipIf(!hasTestDb)('invites and joining by code (e2e)', () => {
           capacity: 5,
         })
         .expect(201);
+      // A schedule gives the placeholder lessons as well (T-16).
+      await http()
+        .put(`/api/v1/groups/${group.body.id}/schedule-rules`)
+        .set('Authorization', schoolA.owner.auth)
+        .set('X-School-Id', schoolA.id)
+        .send({ rules: [{ weekday: 1, startTime: '15:00', durationMin: 60 }] })
+        .expect(200);
+      const lessonsOf = (teacherMembershipId: string) =>
+        prisma.lesson.count({ where: { groupId: group.body.id, teacherMembershipId } });
+      const generated = await lessonsOf(placeholder.id);
+      expect(generated).toBeGreaterThan(0);
 
       const res = await accept(token, schoolA.teacher).expect(200);
       expect(res.body.membership.id).toBe(existing.id);
       expect(await prisma.membership.findUnique({ where: { id: placeholder.id } })).toBeNull();
       const stored = await prisma.group.findUniqueOrThrow({ where: { id: group.body.id } });
       expect(stored.teacherMembershipId).toBe(existing.id);
+      expect(await lessonsOf(existing.id)).toBe(generated);
     });
 
     it('returns no panel address for teachers and parents', async () => {

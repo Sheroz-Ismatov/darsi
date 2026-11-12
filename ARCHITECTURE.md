@@ -182,6 +182,8 @@ Clean Architecture применяем точечно: **доменные пра�
 | `notify.debt` | каждый час | Для школ, где сейчас 10:00 местного, — должникам раз в 7 дней |
 | `notify.send` | по событию | Отправка в Telegram с лимитом 25/с, 3 повтора, 403 → `bot_blocked` |
 
+До появления очередей (T-38) `lessons.extend-horizon` временно запускается внутри процесса API через `@nestjs/schedule` (включается переменной `JOBS_ENABLED`).
+
 ### 3.10. Логирование и мониторинг
 
 pino JSON-логи с `request_id`, `user_id`, `school_id` (без ФИО и телефонов); `/health`; Sentry; UptimeRobot на `/health` и TMA; Docker log rotation; ежедневный `pg_dump` в R2 с хранением 14 дней.

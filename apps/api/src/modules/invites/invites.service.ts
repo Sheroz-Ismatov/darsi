@@ -26,7 +26,7 @@ const isUniqueViolation = (error: unknown): boolean =>
 
 /**
  * Moves everything attached to an invite placeholder onto the membership the user already has,
- * so the placeholder can be deleted. T-18 adds the parent–student links here.
+ * so the placeholder can be deleted.
  */
 export async function mergeMembership(
   tx: Prisma.TransactionClient,
@@ -44,6 +44,19 @@ export async function mergeMembership(
   await tx.lesson.updateMany({
     where: { teacherMembershipId: from },
     data: { teacherMembershipId: into },
+  });
+  // Children of a placeholder parent (T-18, decision 5). A child already linked to the kept
+  // membership keeps that link; the placeholder's duplicate goes away with the placeholder.
+  const kept = await tx.studentGuardian.findMany({
+    where: { membershipId: into },
+    select: { studentId: true },
+  });
+  await tx.studentGuardian.deleteMany({
+    where: { membershipId: from, studentId: { in: kept.map((link) => link.studentId) } },
+  });
+  await tx.studentGuardian.updateMany({
+    where: { membershipId: from },
+    data: { membershipId: into },
   });
 }
 

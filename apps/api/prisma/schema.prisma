@@ -57,6 +57,24 @@ enum LessonStatus {
   cancelled
 }
 
+enum StudentSource {
+  admin
+  parent
+}
+
+enum GuardianRelation {
+  mother
+  father
+  /// An adult student is their own contact.
+  self
+  other
+}
+
+enum EnrollmentStatus {
+  active
+  left
+}
+
 /// Course pastels, DESIGN_SYSTEM.md §1.2.
 enum CourseColor {
   lime
@@ -106,7 +124,7 @@ model School {
   createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  plan          Plan           @relation(fields: [planId], references: [id])
+  plan          Plan              @relation(fields: [planId], references: [id])
   branches      Branch[]
   memberships   Membership[]
   consents      Consent[]
@@ -116,6 +134,9 @@ model School {
   groups        Group[]
   scheduleRules ScheduleRule[]
   lessons       Lesson[]
+  students      Student[]
+  guardians     StudentGuardian[]
+  enrollments   Enrollment[]
 
   @@index([planId])
   @@map("schools")
@@ -174,13 +195,15 @@ model Membership {
   createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  school       School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  user         User?         @relation(fields: [userId], references: [id])
+  school       School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user         User?             @relation(fields: [userId], references: [id])
   inviteTokens InviteToken[]
   /// Groups this teacher membership leads.
   groups       Group[]
   /// Lessons this teacher membership gives.
   lessons      Lesson[]
+  /// Children of this parent membership.
+  wards        StudentGuardian[]
 
   @@unique([schoolId, userId, role])
   @@index([userId])
@@ -258,6 +281,7 @@ model Group {
 
   scheduleRules ScheduleRule[]
   lessons       Lesson[]
+  enrollments   Enrollment[]
 
   @@index([schoolId])
   @@index([courseId])
@@ -316,6 +340,70 @@ model Lesson {
   @@index([teacherMembershipId, startsAt])
   @@index([scheduleRuleId])
   @@map("lessons")
+}
+
+/// A student of a school (TZ FR-17). Never deleted, only archived; parents link through
+/// StudentGuardian and invite links live in InviteToken of the parent membership.
+model Student {
+  id         String        @id @default(uuid(7)) @db.Uuid
+  schoolId   String        @map("school_id") @db.Uuid
+  firstName  String        @map("first_name")
+  lastName   String        @map("last_name")
+  birthDate  DateTime?     @map("birth_date") @db.Date
+  comment    String?
+  createdBy  StudentSource @map("created_by")
+  archivedAt DateTime?     @map("archived_at") @db.Timestamptz(3)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  school      School            @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  guardians   StudentGuardian[]
+  enrollments Enrollment[]
+
+  @@index([schoolId, lastName])
+  @@map("students")
+}
+
+/// Parent–student link; the parent is a membership with the `parent` role (T-18, decision 1).
+model StudentGuardian {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  schoolId     String           @map("school_id") @db.Uuid
+  studentId    String           @map("student_id") @db.Uuid
+  membershipId String           @map("membership_id") @db.Uuid
+  relation     GuardianRelation
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  school     School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, membershipId])
+  @@index([schoolId])
+  @@index([membershipId])
+  @@map("student_guardians")
+}
+
+/// A student in a group (TZ FR-21). Leaving or a transfer closes it; nothing is deleted.
+/// At most one active enrollment per student and group: partial unique index in the migration.
+model Enrollment {
+  id         String           @id @default(uuid(7)) @db.Uuid
+  schoolId   String           @map("school_id") @db.Uuid
+  studentId  String           @map("student_id") @db.Uuid
+  groupId    String           @map("group_id") @db.Uuid
+  enrolledOn DateTime         @map("enrolled_on") @db.Date
+  leftOn     DateTime?        @map("left_on") @db.Date
+  status     EnrollmentStatus @default(active)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  school  School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Restrict)
+
+  @@index([groupId, status])
+  @@index([studentId])
+  @@index([schoolId])
+  @@map("enrollments")
 }
 
 /// Personal data processing consent (TZ FR-62).

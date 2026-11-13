@@ -8,6 +8,8 @@ import { PlatformPage } from '../pages/platform/PlatformPage';
 import { SchedulePage } from '../pages/schedule/SchedulePage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 import { StaffPage } from '../pages/staff/StaffPage';
+import { StudentPage } from '../pages/students/StudentPage';
+import { StudentsPage } from '../pages/students/StudentsPage';
 import { SCHOOL_SECTIONS, SECTION_PATH, type Section } from './auth/access';
 import { RequireSession, SectionRoute } from './auth/guards';
 import { LoginPage } from './auth/LoginPage';
@@ -15,11 +17,12 @@ import { LoginPage } from './auth/LoginPage';
 const PAGES: Partial<Record<Section, ReactNode>> = {
   schedule: <SchedulePage />,
   courses: <CoursesPage />,
+  students: <StudentsPage />,
   staff: <StaffPage />,
   settings: <SettingsPage />,
 };
 
-// TODO(T-18…T-29): replace placeholders with real pages as their tasks land.
+// TODO(T-19…T-29): replace placeholders with real pages as their tasks land.
 const sections: RouteObject[] = SCHOOL_SECTIONS.map((section) => ({
   ...(section === 'dashboard' ? { index: true } : { path: SECTION_PATH[section].slice(1) }),
   element: (
@@ -34,6 +37,15 @@ sections.push({
   element: (
     <SectionRoute section="courses">
       <GroupPage />
+    </SectionRoute>
+  ),
+});
+
+sections.push({
+  path: 'students/:id',
+  element: (
+    <SectionRoute section="students">
+      <StudentPage />
     </SectionRoute>
   ),
 });

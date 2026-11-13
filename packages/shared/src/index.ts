@@ -6,5 +6,6 @@ export * from './contracts/platform';
 export * from './contracts/school';
 export * from './contracts/lessons';
 export * from './contracts/staff';
+export * from './contracts/students';
 export * from './domain';
 export * from './i18n';

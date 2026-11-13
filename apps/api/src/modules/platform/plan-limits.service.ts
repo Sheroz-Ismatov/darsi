@@ -18,10 +18,7 @@ export interface StaffUsage {
   max: number;
 }
 
-/**
- * Plan limits (TZ FR-6). Feature modules call the matching assert before creating a record.
- * TODO(T-18): assertCanAddStudent once the Student model exists.
- */
+/** Plan limits (TZ FR-6). Feature modules call the matching assert before creating a record. */
 @Injectable()
 export class PlanLimitsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -46,6 +43,27 @@ export class PlanLimitsService {
         422,
         { limit: 'staff', max },
       );
+    }
+  }
+
+  /** Call before adding a student or bringing one back from the archive (T-18, decision 8). */
+  async assertCanAddStudent(schoolId: string): Promise<void> {
+    const school = await this.prisma.school.findUnique({
+      where: { id: schoolId },
+      select: {
+        plan: { select: { maxStudents: true } },
+        _count: { select: { students: { where: { archivedAt: null } } } },
+      },
+    });
+    if (!school) {
+      throw new AppError('SCHOOL_NOT_FOUND', 'School not found', 404);
+    }
+    const max = school.plan.maxStudents;
+    if (school._count.students >= max) {
+      throw new AppError('PLAN_LIMIT_REACHED', `The plan allows at most ${max} students`, 422, {
+        limit: 'students',
+        max,
+      });
     }
   }
 

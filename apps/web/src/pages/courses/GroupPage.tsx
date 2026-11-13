@@ -9,6 +9,7 @@ import { FORMAT_LABEL, KIND_LABEL } from '../../features/courses/course-labels';
 import { useArchiveGroup, useGroup } from '../../features/courses/courses-api';
 import { GroupDialog } from '../../features/courses/GroupDialog';
 import { ScheduleTab } from '../../features/lessons/ScheduleTab';
+import { GroupStudentsTab } from '../../features/students/GroupStudentsTab';
 import { errorText } from '../../lib/error-text';
 import { formatDay } from '../../lib/format';
 
@@ -57,7 +58,7 @@ function MeetingLink({ url }: { url: string }) {
   );
 }
 
-/** W-5: a group with its teacher, seats and (later) students and schedule (prototype TGroup). */
+/** W-5: a group with its teacher, seats, students and schedule (prototype TGroup). */
 export function GroupPage() {
   const { t } = useTranslation();
   const { id = '' } = useParams();
@@ -168,12 +169,7 @@ export function GroupPage() {
           { value: 'schedule', label: t('groups.tabSchedule') },
         ]}
       />
-      {tab === 'students' ? (
-        // TODO(T-18): the group's students and "Add student".
-        <EmptyState title={t('groups.studentsEmpty')} text={t('groups.studentsEmptyText')} />
-      ) : (
-        <ScheduleTab group={g} />
-      )}
+      {tab === 'students' ? <GroupStudentsTab group={g} /> : <ScheduleTab group={g} />}
 
       {editing && <GroupDialog course={course} group={g} onClose={() => setEditing(false)} />}
     </>

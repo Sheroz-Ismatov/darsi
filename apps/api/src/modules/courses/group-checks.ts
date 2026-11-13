@@ -20,10 +20,15 @@ export async function assertTeacher(db: Db, schoolId: string, membershipId: stri
   if (!teacher) throw new AppError('TEACHER_NOT_FOUND', 'Teacher not found', 422);
 }
 
-/**
- * Students taking a seat in each group.
- * TODO(T-18): count active enrollments once they exist; until then every group is empty.
- */
-export function countEnrolled(_db: Db, groupIds: string[]): Promise<Map<string, number>> {
-  return Promise.resolve(new Map(groupIds.map((id) => [id, 0])));
+/** Students taking a seat in each group: active enrollments, one query for all groups. */
+export async function countEnrolled(db: Db, groupIds: string[]): Promise<Map<string, number>> {
+  const counts = new Map(groupIds.map((id) => [id, 0]));
+  if (groupIds.length === 0) return counts;
+  const rows = await db.enrollment.groupBy({
+    by: ['groupId'],
+    where: { groupId: { in: groupIds }, status: 'active' },
+    _count: { _all: true },
+  });
+  for (const row of rows) counts.set(row.groupId, row._count._all);
+  return counts;
 }

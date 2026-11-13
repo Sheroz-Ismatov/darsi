@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Дарси́ — документация</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/themes/vue.css" />
+    <style>
+      :root {
+        --theme-color: #5f8a12;
+        --base-font-family: 'Manrope', system-ui, sans-serif;
+      }
+      body {
+        background: #fff;
+      }
+      .markdown-section {
+        max-width: 960px;
+      }
+      .markdown-section table {
+        display: block;
+        overflow-x: auto;
+      }
+      .sidebar > h1 a {
+        color: #14171c;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">Загрузка документации…</div>
+    <script>
+      // Filled by docs/site/build.mjs: "owner/name" of the GitHub repository.
+      const REPO = '__REPO__';
+      const hasRepo = /^[\w.-]+\/[\w.-]+$/.test(REPO);
+
+      /** Resolves a link written relative to the current Markdown file into a repository path. */
+      function repoPath(fromFile, href) {
+        const parts = fromFile.split('/').slice(0, -1);
+        for (const part of href.split('/')) {
+          if (part === '..') parts.pop();
+          else if (part !== '.' && part !== '') parts.push(part);
+        }
+        return parts.join('/');
+      }
+
+      // The site holds only the docs: a link to source code (apps/…, infra/…) opens the file on GitHub,
+      // a link to the design prototype opens it as a page instead of a docsify route.
+      function sourceLinks(hook, vm) {
+        hook.beforeEach((markdown) =>
+          markdown.replace(/\]\(([^)\s]+)\)/g, (match, href) => {
+            if (/^([a-z]+:|#|\/)/i.test(href) || /\.md(#.*)?$/.test(href)) return match;
+            const path = repoPath(vm.route.file, href);
+            if (path.startsWith('design/')) {
+              return `](${new URL(path, location.href.split('#')[0]).href} ':ignore')`;
+            }
+            return hasRepo ? `](https://github.com/${REPO}/blob/main/${path})` : match;
+          }),
+        );
+      }
+
+      window.$docsify = {
+        name: 'Дарси́',
+        nameLink: '#/',
+        repo: hasRepo ? `https://github.com/${REPO}` : '',
+        loadSidebar: true,
+        alias: { '/.*/_sidebar.md': '/_sidebar.md' },
+        relativePath: true,
+        subMaxLevel: 2,
+        maxLevel: 3,
+        auto2top: true,
+        notFoundPage: true,
+        search: {
+          placeholder: 'Поиск по документации',
+          noData: 'Ничего не найдено',
+          depth: 3,
+        },
+        plugins: [sourceLinks],
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/docsify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4.13.1/lib/plugins/search.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
+  </body>
+</html>

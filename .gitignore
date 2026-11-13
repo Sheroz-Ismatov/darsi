@@ -12,3 +12,6 @@ coverage/
 
 # local tooling
 .claude/settings.local.json
+
+# documentation site, built by docs/site/build.mjs
+_site/

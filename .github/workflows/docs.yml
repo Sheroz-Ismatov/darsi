@@ -1,0 +1,45 @@
+# Publishes the documentation (TZ, architecture, plan, task briefs, design prototype) to GitHub Pages.
+# One-time setup: repository Settings → Pages → Source: "GitHub Actions".
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths: ['*.md', 'docs/**', 'design/sample/**', '.github/workflows/docs.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+
+      # Plain Node, no install: the site is the Markdown files plus a docsify page.
+      - run: node docs/site/build.mjs
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

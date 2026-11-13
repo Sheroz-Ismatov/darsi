@@ -8,6 +8,12 @@
       "port": 5500
     },
     {
+      "name": "docs",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5600", "--directory", "_site"],
+      "port": 5600
+    },
+    {
       "name": "api",
       "runtimeExecutable": "node",
       "runtimeArgs": ["apps/api/dist/main.js"],

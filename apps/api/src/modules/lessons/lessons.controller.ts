@@ -103,6 +103,16 @@ export class LessonsController {
     return this.lessons.cancel(school.schoolId, id, body, user.id);
   }
 
+  @Post(':id/restore')
+  @HttpCode(200)
+  restore(
+    @CurrentSchool() school: SchoolContext,
+    @Param('id', idParam) id: string,
+    @CurrentUser() user: AuthUser,
+  ): Promise<LessonChangeResponse> {
+    return this.lessons.restore(school.schoolId, id, user.id);
+  }
+
   @Post(':id/reschedule')
   @HttpCode(200)
   reschedule(

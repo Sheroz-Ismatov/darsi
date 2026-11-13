@@ -32,6 +32,7 @@ import {
   useCancelLesson,
   useLesson,
   useRescheduleLesson,
+  useRestoreLesson,
   useUpdateLesson,
 } from '../../features/lessons/schedule-api';
 import { formatLessonDay, formatLessonMoment, formatLessonRange } from '../../lib/dates';
@@ -438,6 +439,7 @@ export function LessonDrawer({
 }) {
   const { t } = useTranslation();
   const query = useLesson(lessonId);
+  const restore = useRestoreLesson(lessonId);
   const [mode, setMode] = useState<Mode>('view');
   const [notice, setNotice] = useState<Notice | null>(null);
   const lesson = query.data;
@@ -445,7 +447,16 @@ export function LessonDrawer({
 
   const open = (next: Mode) => {
     setNotice(null);
+    restore.reset();
     setMode(next);
+  };
+
+  const bringBack = () => {
+    setNotice(null);
+    restore.mutate(undefined, {
+      onSuccess: (result) =>
+        setNotice({ text: t('calendar.savedRestore'), conflicts: result.conflicts }),
+    });
   };
 
   let body: ReactNode;
@@ -468,6 +479,11 @@ export function LessonDrawer({
             )}
           </div>
         )}
+        {restore.isError && (
+          <div className="mb-4">
+            <FormError error={restore.error} />
+          </div>
+        )}
         <LessonDetails lesson={query.data} timeZone={timeZone} onEditLink={() => open('link')} />
       </>
     );
@@ -486,20 +502,26 @@ export function LessonDrawer({
     );
   }
 
-  // Actions only for a planned lesson (T-17, decision 2); forms carry their own buttons.
-  const footer = mode === 'view' && planned && (
-    <>
-      <Button size="sm" onClick={() => open('reschedule')}>
-        {t('calendar.reschedule')}
+  // A planned lesson is moved, re-staffed or cancelled; a cancelled one can only come back
+  // (T-17, decision 2). Forms carry their own buttons.
+  const footer =
+    mode !== 'view' ? null : planned ? (
+      <>
+        <Button size="sm" onClick={() => open('reschedule')}>
+          {t('calendar.reschedule')}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => open('teacher')}>
+          {t('calendar.replaceTeacher')}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => open('cancel')}>
+          {t('calendar.cancel')}
+        </Button>
+      </>
+    ) : lesson?.status === 'cancelled' ? (
+      <Button size="sm" disabled={restore.isPending} onClick={bringBack}>
+        {t('calendar.restore')}
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => open('teacher')}>
-        {t('calendar.replaceTeacher')}
-      </Button>
-      <Button variant="ghost" size="sm" onClick={() => open('cancel')}>
-        {t('calendar.cancel')}
-      </Button>
-    </>
-  );
+    ) : null;
 
   return (
     <Drawer

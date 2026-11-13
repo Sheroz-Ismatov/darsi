@@ -107,6 +107,9 @@ export const useCancelLesson = (id: string) =>
     send<LessonDetailDto>('POST', `/lessons/${id}/cancel`, data),
   );
 
+export const useRestoreLesson = (id: string) =>
+  useLessonMutation(() => send<LessonChangeResponse>('POST', `/lessons/${id}/restore`, {}));
+
 export const useRescheduleLesson = (id: string) =>
   useLessonMutation((data: RescheduleLessonRequest) =>
     send<LessonChangeResponse>('POST', `/lessons/${id}/reschedule`, data),

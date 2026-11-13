@@ -19,8 +19,11 @@ const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 /** Asia/Dushanbe has no daylight saving time: always UTC+5. */
 const DUSHANBE_OFFSET_MS = 5 * HOUR_MS;
-/** Soft bound of T-17, decision 7: catches only gross mistakes on a remote database. */
-const LIST_SOFT_LIMIT_MS = 3_000;
+/**
+ * Soft bound of T-17, decision 7: catches only gross mistakes on a remote database. The list
+ * takes 1.4–2.6 s from the dev machine, and 3 s proved too close to that on a slow evening.
+ */
+const LIST_SOFT_LIMIT_MS = 6_000;
 
 /** A date in Dushanbe `offset` days from today. */
 const day = (offset: number): string =>
@@ -139,6 +142,12 @@ describe.skipIf(!hasTestDb)('lessons calendar (e2e)', () => {
     },
     {
       method: 'post',
+      path: () => `/lessons/${lessonOfA.id}/restore`,
+      label: 'POST /lessons/:id/restore',
+      targetsSchoolARecord: true,
+    },
+    {
+      method: 'post',
       path: () => `/lessons/${lessonOfA.id}/reschedule`,
       label: 'POST /lessons/:id/reschedule',
       body: () => ({ date: day(4), time: '10:00' }),
@@ -171,6 +180,7 @@ describe.skipIf(!hasTestDb)('lessons calendar (e2e)', () => {
       await api('post', `/lessons/${lesson.id}/cancel`, admin.auth)
         .send({ reason: 'Праздник' })
         .expect(200);
+      await api('post', `/lessons/${lesson.id}/restore`, admin.auth).expect(200);
     });
 
     it.each(['teacher', 'parent'] as const)('closes every endpoint to a %s', async (role) => {
@@ -185,6 +195,7 @@ describe.skipIf(!hasTestDb)('lessons calendar (e2e)', () => {
           durationMin: 60,
         }),
         api('post', `/lessons/${lessonOfA.id}/cancel`, auth).send({ reason: 'Нет' }),
+        api('post', `/lessons/${lessonOfA.id}/restore`, auth),
         api('post', `/lessons/${lessonOfA.id}/reschedule`, auth).send({
           date: day(4),
           time: '10:00',
@@ -409,6 +420,54 @@ describe.skipIf(!hasTestDb)('lessons calendar (e2e)', () => {
         before: { status: 'planned' },
         after: { status: 'cancelled', cancelReason: 'Праздник' },
       });
+    });
+
+    it('brings a cancelled lesson back to its slot', async () => {
+      const group = await createGroup();
+      const { lesson } = await createLesson({ groupId: group.id, date: day(8), time: '10:00' });
+      const planned = await api('post', `/lessons/${lesson.id}/restore`, owner()).expect(409);
+      expect(planned.body.error.code).toBe('LESSON_NOT_CANCELLED');
+
+      await api('post', `/lessons/${lesson.id}/cancel`, owner())
+        .send({ reason: 'По ошибке' })
+        .expect(200);
+      // The cancelled lesson still holds the slot, so a one-off cannot stand in for it.
+      const again = await api('post', '/lessons', owner())
+        .send({ groupId: group.id, date: day(8), time: '10:00', durationMin: 60 })
+        .expect(409);
+      expect(again.body.error.code).toBe('LESSON_SLOT_TAKEN');
+
+      const res = await api('post', `/lessons/${lesson.id}/restore`, owner()).expect(200);
+      const restored = res.body as LessonChangeResponse;
+      expect(restored.conflicts).toEqual([]);
+      expect(restored.lesson).toMatchObject({
+        id: lesson.id,
+        status: 'planned',
+        cancelReason: null,
+        startsAt: lesson.startsAt,
+      });
+      const twice = await api('post', `/lessons/${lesson.id}/restore`, owner()).expect(409);
+      expect(twice.body.error.code).toBe('LESSON_NOT_CANCELLED');
+
+      const log = await prisma.auditLog.findFirst({
+        where: { entity: 'Lesson', entityId: lesson.id, action: 'restore' },
+      });
+      expect(log).toMatchObject({
+        actorUserId: fixture.schoolA.owner.userId,
+        before: { status: 'cancelled', cancelReason: 'По ошибке' },
+        after: { status: 'planned' },
+      });
+    });
+
+    it('does not restore a lesson of an archived group', async () => {
+      const group = await createGroup();
+      const { lesson } = await createLesson({ groupId: group.id, date: day(8), time: '11:00' });
+      await api('post', `/lessons/${lesson.id}/cancel`, owner())
+        .send({ reason: 'Нет' })
+        .expect(200);
+      await api('post', `/groups/${group.id}/archive`, owner()).expect(200);
+      const res = await api('post', `/lessons/${lesson.id}/restore`, owner()).expect(409);
+      expect(res.body.error.code).toBe('GROUP_ARCHIVED');
     });
 
     it('keeps a cancelled generated lesson cancelled after a sync, without a duplicate', async () => {

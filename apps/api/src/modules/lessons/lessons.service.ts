@@ -44,6 +44,8 @@ const lessonNotFound = () => new AppError('LESSON_NOT_FOUND', 'Lesson not found'
 const groupNotFound = () => new AppError('GROUP_NOT_FOUND', 'Group not found', 404);
 const notPlanned = () =>
   new AppError('LESSON_NOT_PLANNED', 'Only a planned lesson can be changed', 409);
+const notCancelled = () =>
+  new AppError('LESSON_NOT_CANCELLED', 'Only a cancelled lesson can be restored', 409);
 const slotTaken = () =>
   new AppError('LESSON_SLOT_TAKEN', 'The group already has a lesson at this time', 409);
 
@@ -157,7 +159,7 @@ export class LessonsService {
     return this.withConflicts(created);
   }
 
-  /** There is no way back: a lesson cancelled by mistake is replaced by a one-off (decision 2). */
+  /** A lesson cancelled by mistake is brought back with `restore`. */
   async cancel(
     schoolId: string,
     id: string,
@@ -186,6 +188,44 @@ export class LessonsService {
       return this.find(tx, schoolId, id);
     }, TX_OPTIONS);
     return this.present(lesson);
+  }
+
+  /**
+   * Undoes a cancellation. A cancelled lesson keeps its slot in the group, so a one-off lesson
+   * could not replace it at the same time; bringing it back is the only way.
+   */
+  async restore(schoolId: string, id: string, actorId: string): Promise<LessonChangeResponse> {
+    const before = await this.find(this.prisma, schoolId, id);
+    if (before.status !== 'cancelled') throw notCancelled();
+    const group = await this.prisma.group.findUniqueOrThrow({
+      where: { id: before.groupId },
+      select: { archivedAt: true, course: { select: { archivedAt: true } } },
+    });
+    // Same rule as for a one-off lesson: an archived group or course gets no new lessons.
+    if (group.archivedAt) throw new AppError('GROUP_ARCHIVED', 'The group is archived', 409);
+    if (group.course.archivedAt) {
+      throw new AppError('COURSE_ARCHIVED', 'The course is archived', 409);
+    }
+
+    const after = await this.prisma.$transaction(async (tx) => {
+      // The status condition makes a concurrent second restore fail instead of repeating.
+      const { count } = await tx.lesson.updateMany({
+        where: { id, schoolId, status: 'cancelled' },
+        data: { status: 'planned', cancelReason: null },
+      });
+      if (count === 0) throw notCancelled();
+      await this.audit(
+        tx,
+        schoolId,
+        actorId,
+        id,
+        'restore',
+        { status: 'cancelled', cancelReason: before.cancelReason },
+        { status: 'planned' },
+      );
+      return this.find(tx, schoolId, id);
+    }, TX_OPTIONS);
+    return this.withConflicts(after);
   }
 
   /**

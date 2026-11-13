@@ -356,6 +356,7 @@ describe.skipIf(!hasTestDb)('students and enrollments (e2e)', { timeout: 90_000 
         studentBody({ comment: 'x'.repeat(1001) }),
         studentBody({}, { phone: '12-34-56' }),
         studentBody({}, { phone: '1'.repeat(16) }),
+        studentBody({}, { phone: 'abc1234567' }),
         studentBody({}, { relation: 'uncle' }),
         studentBody({}, { name: '' }),
       ];
@@ -457,6 +458,17 @@ describe.skipIf(!hasTestDb)('students and enrollments (e2e)', { timeout: 90_000 
       const links = await prisma.studentGuardian.findMany({ where: { membershipId: kept } });
       expect(links.map((l) => l.studentId).sort()).toEqual(
         [linked.student.id, sibling.student.id].sort(),
+      );
+
+      // The phone typed for the placeholder survives the merge, so a third child finds the parent.
+      const keptMembership = await prisma.membership.findUniqueOrThrow({ where: { id: kept } });
+      expect(keptMembership.phone).toBe(phone);
+      const third = await createStudent({ firstName: 'Третий' }, { phone });
+      expect(third.guardianReused).toBe(true);
+      expect(third.student.guardians[0]).toMatchObject({ membershipId: kept, phone, joined: true });
+      const found = await list(`?search=${phone.slice(-7)}`);
+      expect(found.items.map((s) => s.id)).toEqual(
+        expect.arrayContaining([sibling.student.id, third.student.id]),
       );
     });
 
@@ -625,13 +637,22 @@ describe.skipIf(!hasTestDb)('students and enrollments (e2e)', { timeout: 90_000 
   describe('archive', () => {
     it('closes enrollments, hides the student and blocks enrolling until restored', async () => {
       const group = await createGroup();
+      const later = await createGroup({ name: 'С будущей даты' });
       const { student } = await createStudent({ lastName: 'Архивов' });
-      await enroll(student.id, { groupId: group.id }).expect(201);
+      const current = await enroll(student.id, { groupId: group.id }).expect(201);
+      const future = await enroll(student.id, {
+        groupId: later.id,
+        enrolledOn: '2099-01-10',
+      }).expect(201);
 
       const archived = await api('post', `/students/${student.id}/archive`, owner()).expect(200);
       expect(archived.body).toMatchObject({ archived: true, groups: [] });
-      expect((archived.body as StudentDetailDto).enrollments[0]).toMatchObject({ status: 'left' });
-      expect((archived.body as StudentDetailDto).enrollments[0]!.leftOn).toMatch(/^\d{4}-/);
+      const closed = (archived.body as StudentDetailDto).enrollments;
+      const byId = (id: string) => closed.find((e) => e.id === id)!;
+      expect(byId(current.body.id)).toMatchObject({ status: 'left' });
+      expect(byId(current.body.id).leftOn).toMatch(/^\d{4}-/);
+      // A future enrollment does not end before it starts.
+      expect(byId(future.body.id)).toMatchObject({ status: 'left', leftOn: '2099-01-10' });
 
       expect((await list('?search=Архивов')).items.map((s) => s.id)).not.toContain(student.id);
       expect((await list('?search=Архивов&archived=true')).items.map((s) => s.id)).toContain(

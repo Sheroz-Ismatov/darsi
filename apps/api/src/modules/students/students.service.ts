@@ -294,10 +294,12 @@ export class StudentsService {
           select: { id: true },
         });
         closed = active.map((row) => row.id);
-        await tx.enrollment.updateMany({
-          where: { id: { in: closed } },
-          data: { status: 'left', leftOn: fromDateString(today) },
-        });
+        // An enrollment that starts in the future ends on its own first day, never before it:
+        // a plain leave refuses such a date too.
+        await tx.$executeRaw`
+          UPDATE enrollments
+          SET status = 'left', left_on = GREATEST(enrolled_on, ${today}::date), updated_at = now()
+          WHERE school_id = ${schoolId}::uuid AND id = ANY(${closed}::uuid[])`;
       }
       await this.audit(
         tx,

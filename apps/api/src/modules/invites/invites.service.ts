@@ -169,7 +169,12 @@ export class InvitesService {
         await tx.membership.delete({ where: { id: placeholder.id } });
         joined = await tx.membership.update({
           where: { id: existing.id },
-          data: { status: 'active' },
+          // A parent who joined by the school code has no phone; the one the admin typed for
+          // the placeholder keeps them findable for the next child (T-18, decision 2).
+          data: {
+            status: 'active',
+            ...(!existing.phone && placeholder.phone && { phone: placeholder.phone }),
+          },
         });
       } else {
         joined = await tx.membership.update({

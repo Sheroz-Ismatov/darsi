@@ -1,6 +1,6 @@
-import type { GroupDto, GroupFullDetails } from '@darsi/shared';
+import { STUDENTS_PAGE_SIZE, type GroupDto, type GroupFullDetails } from '@darsi/shared';
 import { Avatar, Button, Card, EmptyState, Field, Input } from '@darsi/ui';
-import { Plus, TriangleAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -116,10 +116,20 @@ function AddStudentPanel({ group, onClose }: { group: GroupDto; onClose: () => v
 /** W-5 "Students" tab: who is in the group now, adding and leaving (TZ FR-21). */
 export function GroupStudentsTab({ group }: { group: GroupDto }) {
   const { t } = useTranslation();
-  const students = useStudents({ groupId: group.id });
+  // A group holds up to 500 students; the list comes in pages of the student list.
+  const [page, setPage] = useState(1);
+  const students = useStudents({ groupId: group.id, page });
   const [adding, setAdding] = useState(false);
   const [leaving, setLeaving] = useState<{ enrollmentId: string } | null>(null);
   const items = students.data?.items ?? [];
+  const pages = students.data
+    ? Math.max(1, Math.ceil(students.data.total / STUDENTS_PAGE_SIZE))
+    : 1;
+
+  // Leaving the last student of the last page leaves that page empty: step back.
+  useEffect(() => {
+    if (students.data && !students.isPlaceholderData && page > pages) setPage(pages);
+  }, [students.data, students.isPlaceholderData, page, pages]);
 
   return (
     <>
@@ -178,6 +188,26 @@ export function GroupStudentsTab({ group }: { group: GroupDto }) {
             );
           })}
         </Card>
+      )}
+      {pages > 1 && (
+        <div className="mt-4 flex items-center justify-end gap-3">
+          <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+            <ChevronLeft size={16} aria-hidden />
+            {t('students.prevPage')}
+          </Button>
+          <span className="font-mono text-[13px] text-muted">
+            {t('students.pageOf', { page, pages })}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={page >= pages}
+            onClick={() => setPage(page + 1)}
+          >
+            {t('students.nextPage')}
+            <ChevronRight size={16} aria-hidden />
+          </Button>
+        </div>
       )}
 
       {leaving && (

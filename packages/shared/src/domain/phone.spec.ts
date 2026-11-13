@@ -19,4 +19,10 @@ describe('normalizePhone', () => {
     expect(normalizePhone('телефон')).toBeNull();
     expect(normalizePhone('')).toBeNull();
   });
+
+  it('rejects letters and a plus anywhere but the start', () => {
+    expect(normalizePhone('abc1234567')).toBeNull();
+    expect(normalizePhone('+992 90 123 45 67 доб. 2')).toBeNull();
+    expect(normalizePhone('992+901234567')).toBeNull();
+  });
 });
